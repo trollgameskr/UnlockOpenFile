@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Diagnostics;
 using System.Threading.Tasks;
+using System.Text.RegularExpressions;
 
 namespace UnlockOpenFile
 {
@@ -27,8 +28,13 @@ namespace UnlockOpenFile
                 throw new FileNotFoundException("파일을 찾을 수 없습니다.", originalFilePath);
             
             _originalFilePath = originalFilePath;
+            
+            // Remove existing _copy_ suffixes to avoid cascading copy names
+            string baseFileName = Path.GetFileNameWithoutExtension(originalFilePath);
+            baseFileName = Regex.Replace(baseFileName, @"(_copy_\d+)+$", "");
+            
             _tempFilePath = Path.Combine(Path.GetTempPath(), 
-                $"{Path.GetFileNameWithoutExtension(originalFilePath)}_copy_{DateTime.Now.Ticks}{Path.GetExtension(originalFilePath)}");
+                $"{baseFileName}_copy_{DateTime.Now.Ticks}{Path.GetExtension(originalFilePath)}");
         }
 
         public Task<bool> OpenFileAsync()
