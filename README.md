@@ -17,15 +17,26 @@
 
 ## 빌드 방법
 
+개발 빌드:
 ```bash
 dotnet build
 ```
 
-빌드된 실행 파일은 `bin/Debug/net8.0-windows/UnlockOpenFile.exe`에 생성됩니다.
-
 릴리스 빌드:
 ```bash
 dotnet build -c Release
+```
+
+배포용 패키지 생성:
+```bash
+dotnet publish -c Release -r win-x64 --self-contained false -o ./publish
+```
+
+빌드된 실행 파일은 `publish/UnlockOpenFile.exe`에 생성됩니다.
+
+자체 포함형 빌드 (.NET Runtime 포함):
+```bash
+dotnet publish -c Release -r win-x64 --self-contained true -o ./publish-standalone
 ```
 
 ## 사용 방법

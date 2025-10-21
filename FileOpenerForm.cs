@@ -14,10 +14,19 @@ namespace UnlockOpenFile
 
         public FileOpenerForm(string filePath)
         {
-            _fileManager = new FileManager(filePath);
-            InitializeComponents();
-            InitializeFileManager();
-            _ = OpenFileAsync();
+            try
+            {
+                _fileManager = new FileManager(filePath);
+                InitializeComponents();
+                InitializeFileManager();
+                _ = OpenFileAsync();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"파일 초기화 오류: {ex.Message}", "오류", 
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+                throw;
+            }
         }
 
         private void InitializeComponents()

@@ -18,6 +18,8 @@ build/
 bld/
 [Bb]in/
 [Oo]bj/
+[Pp]ublish/
+[Pp]ublish-*/
 
 # Visual Studio cache/options directory
 .vs/

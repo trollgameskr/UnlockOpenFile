@@ -20,6 +20,12 @@ namespace UnlockOpenFile
 
         public FileManager(string originalFilePath)
         {
+            if (string.IsNullOrWhiteSpace(originalFilePath))
+                throw new ArgumentException("파일 경로가 비어있습니다.", nameof(originalFilePath));
+            
+            if (!File.Exists(originalFilePath))
+                throw new FileNotFoundException("파일을 찾을 수 없습니다.", originalFilePath);
+            
             _originalFilePath = originalFilePath;
             _tempFilePath = Path.Combine(Path.GetTempPath(), 
                 $"{Path.GetFileNameWithoutExtension(originalFilePath)}_copy_{DateTime.Now.Ticks}{Path.GetExtension(originalFilePath)}");
