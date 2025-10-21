@@ -35,8 +35,13 @@ namespace UnlockOpenFile
                 }
                 else
                 {
-                    // Show settings in existing instance
-                    SendCommandToExistingInstance("SHOW_SETTINGS");
+                    // If no MainForm is running, just show settings
+                    // Otherwise send command to show settings
+                    if (!TrySendCommandToExistingInstance("SHOW_SETTINGS"))
+                    {
+                        // No main form is running, just show settings directly
+                        Application.Run(new SettingsForm());
+                    }
                 }
                 return;
             }
@@ -57,6 +62,7 @@ namespace UnlockOpenFile
                 else
                 {
                     // Show settings form if no file is specified
+                    // Don't start IPC server in this case
                     Application.Run(new SettingsForm());
                 }
             }
@@ -133,20 +139,21 @@ namespace UnlockOpenFile
             }
         }
 
-        private static void SendCommandToExistingInstance(string command)
+        private static bool TrySendCommandToExistingInstance(string command)
         {
             try
             {
                 using var client = new NamedPipeClientStream(".", PipeName, PipeDirection.Out);
-                client.Connect(5000); // 5 second timeout
+                client.Connect(1000); // 1 second timeout
 
                 using var writer = new StreamWriter(client, Encoding.UTF8) { AutoFlush = true };
                 writer.Write(command);
+                return true;
             }
-            catch (Exception ex)
+            catch
             {
-                MessageBox.Show($"실행 중인 프로그램과 통신할 수 없습니다: {ex.Message}",
-                    "오류", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                // No IPC server running
+                return false;
             }
         }
     }
