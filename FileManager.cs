@@ -2,7 +2,7 @@ using System;
 using System.IO;
 using System.Diagnostics;
 using System.Threading.Tasks;
-using System.Text.RegularExpressions;
+using Microsoft.Win32;
 
 namespace UnlockOpenFile
 {
@@ -28,13 +28,8 @@ namespace UnlockOpenFile
                 throw new FileNotFoundException("파일을 찾을 수 없습니다.", originalFilePath);
             
             _originalFilePath = originalFilePath;
-            
-            // Remove existing _copy_ suffixes to avoid cascading copy names
-            string baseFileName = Path.GetFileNameWithoutExtension(originalFilePath);
-            baseFileName = Regex.Replace(baseFileName, @"(_copy_\d+)+$", "");
-            
             _tempFilePath = Path.Combine(Path.GetTempPath(), 
-                $"{baseFileName}_copy_{DateTime.Now.Ticks}{Path.GetExtension(originalFilePath)}");
+                $"{Path.GetFileNameWithoutExtension(originalFilePath)}_copy_{DateTime.Now.Ticks}{Path.GetExtension(originalFilePath)}");
         }
 
         public Task<bool> OpenFileAsync()
@@ -51,11 +46,29 @@ namespace UnlockOpenFile
                 
                 // Open the temp file with the default application
                 OnStatusChanged("파일 열기...");
-                _openedProcess = Process.Start(new ProcessStartInfo
+                
+                // Get the actual application to open the file, avoiding recursion
+                string? appPath = GetActualDefaultApplication(Path.GetExtension(_tempFilePath));
+                
+                if (!string.IsNullOrEmpty(appPath))
                 {
-                    FileName = _tempFilePath,
-                    UseShellExecute = true
-                });
+                    // Open with the specific application
+                    _openedProcess = Process.Start(new ProcessStartInfo
+                    {
+                        FileName = appPath,
+                        Arguments = $"\"{_tempFilePath}\"",
+                        UseShellExecute = false
+                    });
+                }
+                else
+                {
+                    // Fallback: use shell execute but this may cause recursion
+                    _openedProcess = Process.Start(new ProcessStartInfo
+                    {
+                        FileName = _tempFilePath,
+                        UseShellExecute = true
+                    });
+                }
 
                 OnStatusChanged($"파일이 열렸습니다: {Path.GetFileName(_tempFilePath)}");
                 
@@ -159,6 +172,140 @@ namespace UnlockOpenFile
             {
                 await SaveToOriginalAsync();
             }
+        }
+
+        private string? GetActualDefaultApplication(string extension)
+        {
+            try
+            {
+                string currentExePath = System.Diagnostics.Process.GetCurrentProcess().MainModule?.FileName ?? "";
+                
+                // First, check HKEY_CURRENT_USER for user-specific associations
+                string? progId = GetProgIdFromRegistry(Registry.CurrentUser, extension);
+                if (progId != null)
+                {
+                    string? appPath = GetApplicationFromProgId(Registry.CurrentUser, progId);
+                    if (appPath != null && !appPath.Equals(currentExePath, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return appPath;
+                    }
+                }
+                
+                // Then, check HKEY_LOCAL_MACHINE for system-wide associations
+                progId = GetProgIdFromRegistry(Registry.LocalMachine, extension);
+                if (progId != null)
+                {
+                    string? appPath = GetApplicationFromProgId(Registry.LocalMachine, progId);
+                    if (appPath != null && !appPath.Equals(currentExePath, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return appPath;
+                    }
+                }
+                
+                // Check for common applications based on extension
+                return GetCommonApplicationForExtension(extension);
+            }
+            catch (Exception ex)
+            {
+                OnStatusChanged($"기본 응용 프로그램 찾기 오류: {ex.Message}");
+                return null;
+            }
+        }
+
+        private string? GetProgIdFromRegistry(RegistryKey rootKey, string extension)
+        {
+            try
+            {
+                using var extKey = rootKey.OpenSubKey($@"Software\Classes\{extension}");
+                if (extKey != null)
+                {
+                    var progId = extKey.GetValue("")?.ToString();
+                    if (!string.IsNullOrEmpty(progId) && !progId.StartsWith("UnlockOpenFile"))
+                    {
+                        return progId;
+                    }
+                }
+            }
+            catch { }
+            return null;
+        }
+
+        private string? GetApplicationFromProgId(RegistryKey rootKey, string progId)
+        {
+            try
+            {
+                using var commandKey = rootKey.OpenSubKey($@"Software\Classes\{progId}\shell\open\command");
+                if (commandKey != null)
+                {
+                    var command = commandKey.GetValue("")?.ToString();
+                    if (!string.IsNullOrEmpty(command))
+                    {
+                        // Extract the executable path from the command
+                        // Command is usually in format: "path\to\app.exe" "%1"
+                        int firstQuote = command.IndexOf('"');
+                        if (firstQuote >= 0)
+                        {
+                            int secondQuote = command.IndexOf('"', firstQuote + 1);
+                            if (secondQuote > firstQuote)
+                            {
+                                return command.Substring(firstQuote + 1, secondQuote - firstQuote - 1);
+                            }
+                        }
+                        else
+                        {
+                            // No quotes, try to get the first part before a space
+                            var parts = command.Split(' ');
+                            if (parts.Length > 0 && File.Exists(parts[0]))
+                            {
+                                return parts[0];
+                            }
+                        }
+                    }
+                }
+            }
+            catch { }
+            return null;
+        }
+
+        private string? GetCommonApplicationForExtension(string extension)
+        {
+            // Common application paths for well-known extensions
+            switch (extension.ToLowerInvariant())
+            {
+                case ".xlsx":
+                case ".xls":
+                    // Try to find Excel
+                    var excelPaths = new[]
+                    {
+                        @"C:\Program Files\Microsoft Office\root\Office16\EXCEL.EXE",
+                        @"C:\Program Files (x86)\Microsoft Office\root\Office16\EXCEL.EXE",
+                        @"C:\Program Files\Microsoft Office\Office16\EXCEL.EXE",
+                        @"C:\Program Files (x86)\Microsoft Office\Office16\EXCEL.EXE"
+                    };
+                    foreach (var path in excelPaths)
+                    {
+                        if (File.Exists(path))
+                            return path;
+                    }
+                    break;
+                    
+                case ".csv":
+                    // For CSV, prefer Excel if available, otherwise use notepad
+                    var csvApps = new[]
+                    {
+                        @"C:\Program Files\Microsoft Office\root\Office16\EXCEL.EXE",
+                        @"C:\Program Files (x86)\Microsoft Office\root\Office16\EXCEL.EXE",
+                        @"C:\Windows\System32\notepad.exe"
+                    };
+                    foreach (var path in csvApps)
+                    {
+                        if (File.Exists(path))
+                            return path;
+                    }
+                    break;
+            }
+            
+            return null;
         }
 
         public void Cleanup()
