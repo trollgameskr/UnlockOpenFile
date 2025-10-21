@@ -51,15 +51,28 @@ namespace UnlockOpenFile
                 // Get the actual application to open the file, avoiding recursion
                 string? appPath = GetActualDefaultApplication(Path.GetExtension(_tempFilePath));
                 
-                if (!string.IsNullOrEmpty(appPath))
+                if (!string.IsNullOrEmpty(appPath) && File.Exists(appPath))
                 {
-                    // Open with the specific application
-                    _openedProcess = Process.Start(new ProcessStartInfo
+                    try
                     {
-                        FileName = appPath,
-                        Arguments = $"\"{_tempFilePath}\"",
-                        UseShellExecute = false
-                    });
+                        // Open with the specific application
+                        _openedProcess = Process.Start(new ProcessStartInfo
+                        {
+                            FileName = appPath,
+                            Arguments = $"\"{_tempFilePath}\"",
+                            UseShellExecute = false
+                        });
+                    }
+                    catch (Exception ex)
+                    {
+                        OnStatusChanged($"특정 응용 프로그램으로 열기 실패: {ex.Message}. 기본 방법으로 재시도합니다.");
+                        // Fallback to shell execute if specific app fails
+                        _openedProcess = Process.Start(new ProcessStartInfo
+                        {
+                            FileName = _tempFilePath,
+                            UseShellExecute = true
+                        });
+                    }
                 }
                 else
                 {
@@ -252,7 +265,12 @@ namespace UnlockOpenFile
                             int secondQuote = command.IndexOf('"', firstQuote + 1);
                             if (secondQuote > firstQuote)
                             {
-                                return command.Substring(firstQuote + 1, secondQuote - firstQuote - 1);
+                                string exePath = command.Substring(firstQuote + 1, secondQuote - firstQuote - 1);
+                                // Validate that the executable exists before returning
+                                if (File.Exists(exePath))
+                                {
+                                    return exePath;
+                                }
                             }
                         }
                         else
