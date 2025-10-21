@@ -125,6 +125,18 @@ namespace UnlockOpenFile
                         "파일이 수정되어 원본에 저장 중입니다.", ToolTipIcon.Info));
                 }
             };
+            
+            _fileManager.ProcessExited += (s, e) =>
+            {
+                if (this.InvokeRequired)
+                {
+                    this.Invoke(() => this.Close());
+                }
+                else
+                {
+                    this.Close();
+                }
+            };
         }
 
         private async System.Threading.Tasks.Task OpenFileAsync()
