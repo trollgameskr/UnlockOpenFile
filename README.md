@@ -2,6 +2,17 @@
 
 파일 열때 에디터가 점유해서 다른 프로그램에서 접근할 수 없던 불편함을 해결하기 위한 Windows 프로그램
 
+> 💡 **빠른 시작:** 5분 안에 시작하려면 [QUICKSTART.md](QUICKSTART.md)를 참조하세요!
+
+## 📚 문서 가이드
+
+- **[QUICKSTART.md](QUICKSTART.md)** - 5분 빠른 시작 가이드
+- **[USAGE_GUIDE.md](USAGE_GUIDE.md)** - 상세 사용법과 시나리오
+- **[ARCHITECTURE.md](ARCHITECTURE.md)** - 기술 아키텍처 문서
+- **[IMPLEMENTATION_SUMMARY.md](IMPLEMENTATION_SUMMARY.md)** - 구현 개요
+- **[CHANGELOG.md](CHANGELOG.md)** - 버전 변경 이력
+- **[examples/](examples/)** - 사용 예제 스크립트
+
 ## 기능
 
 - **파일 복사 및 열기**: Excel, CSV 등의 파일을 열 때 자동으로 임시 복사본을 생성하여 원본 파일을 잠그지 않습니다
