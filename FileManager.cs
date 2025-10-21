@@ -17,6 +17,7 @@ namespace UnlockOpenFile
         public event EventHandler<string>? StatusChanged;
         public event EventHandler? FileModified;
         public event EventHandler? FileSaved;
+        public event EventHandler? ProcessExited;
 
         public FileManager(string originalFilePath)
         {
@@ -153,6 +154,9 @@ namespace UnlockOpenFile
             {
                 await SaveToOriginalAsync();
             }
+            
+            // Notify that the process has exited
+            ProcessExited?.Invoke(this, EventArgs.Empty);
         }
 
         public void Cleanup()
