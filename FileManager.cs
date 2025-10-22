@@ -206,6 +206,25 @@ namespace UnlockOpenFile
             
             OnStatusChanged("프로그램이 종료되었습니다.");
             
+            // Check for final modifications before saving
+            try
+            {
+                if (File.Exists(_tempFilePath))
+                {
+                    var currentModified = File.GetLastWriteTime(_tempFilePath);
+                    if (currentModified > _lastModified)
+                    {
+                        // File was modified but FileSystemWatcher might not have fired yet
+                        _isModified = true;
+                        _lastModified = currentModified;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                OnStatusChanged($"최종 수정 확인 오류: {ex.Message}");
+            }
+            
             // Final save if modified
             if (_isModified)
             {
@@ -244,6 +263,23 @@ namespace UnlockOpenFile
                     // Check if file is still locked (being used by another process)
                     if (!IsFileLocked(_tempFilePath))
                     {
+                        // Check for any final modifications before considering the file closed
+                        try
+                        {
+                            var currentModified = File.GetLastWriteTime(_tempFilePath);
+                            if (currentModified > _lastModified)
+                            {
+                                // File was modified, update tracking
+                                _isModified = true;
+                                _lastModified = currentModified;
+                                OnStatusChanged("최종 변경 사항 감지됨.");
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            OnStatusChanged($"최종 수정 확인 오류: {ex.Message}");
+                        }
+                        
                         // File exists but is not locked - check if it hasn't been modified for a while
                         var timeSinceLastModify = DateTime.Now - _lastModified;
                         if (timeSinceLastModify.TotalMinutes > 5)
@@ -457,8 +493,25 @@ namespace UnlockOpenFile
                 
                 _fileWatcher?.Dispose();
                 
+                // Perform a final save check before cleanup
                 if (File.Exists(_tempFilePath))
                 {
+                    try
+                    {
+                        var currentModified = File.GetLastWriteTime(_tempFilePath);
+                        if (currentModified > _lastModified)
+                        {
+                            // File was modified but not yet saved
+                            OnStatusChanged("최종 변경 사항 감지, 원본에 저장 중...");
+                            _pendingSaveTask = SaveToOriginalAsync();
+                            _pendingSaveTask.Wait(TimeSpan.FromSeconds(10));
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        OnStatusChanged($"최종 저장 확인 오류: {ex.Message}");
+                    }
+                    
                     File.Delete(_tempFilePath);
                 }
             }
