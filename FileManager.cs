@@ -14,6 +14,7 @@ namespace UnlockOpenFile
         private DateTime _lastModified;
         private bool _isModified = false;
         private Process? _openedProcess;
+        private Task? _pendingSaveTask;
 
         public event EventHandler<string>? StatusChanged;
         public event EventHandler? FileModified;
@@ -184,7 +185,8 @@ namespace UnlockOpenFile
             // Final save if modified
             if (_isModified)
             {
-                await SaveToOriginalAsync();
+                _pendingSaveTask = SaveToOriginalAsync();
+                await _pendingSaveTask;
             }
             
             // Notify that the process has exited
@@ -342,6 +344,13 @@ namespace UnlockOpenFile
         {
             try
             {
+                // Wait for any pending save operation to complete
+                if (_pendingSaveTask != null && !_pendingSaveTask.IsCompleted)
+                {
+                    OnStatusChanged("저장 작업 완료 대기 중...");
+                    _pendingSaveTask.Wait(TimeSpan.FromSeconds(10)); // Wait up to 10 seconds
+                }
+                
                 _fileWatcher?.Dispose();
                 
                 if (File.Exists(_tempFilePath))
