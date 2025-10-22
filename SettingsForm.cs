@@ -15,6 +15,10 @@ namespace UnlockOpenFile
         private TextBox _logTextBox = null!;
         private GroupBox _fileAssociationGroup = null!;
         private GroupBox _startupGroup = null!;
+        private GroupBox _customApplicationGroup = null!;
+        private ListView _applicationListView = null!;
+        private Button _addApplicationButton = null!;
+        private Button _removeApplicationButton = null!;
 
         public SettingsForm()
         {
@@ -25,7 +29,7 @@ namespace UnlockOpenFile
         private void InitializeComponents()
         {
             this.Text = "UnlockOpenFile - 설정";
-            this.Size = new Size(700, 500);
+            this.Size = new Size(700, 700);
             this.StartPosition = FormStartPosition.CenterScreen;
             this.FormBorderStyle = FormBorderStyle.FixedDialog;
             this.MaximizeBox = false;
@@ -33,13 +37,14 @@ namespace UnlockOpenFile
             var mainPanel = new TableLayoutPanel
             {
                 Dock = DockStyle.Fill,
-                RowCount = 4,
+                RowCount = 5,
                 ColumnCount = 1,
                 Padding = new Padding(10)
             };
 
             mainPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 120));
             mainPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 100));
+            mainPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 200));
             mainPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
             mainPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 50));
 
@@ -113,6 +118,54 @@ namespace UnlockOpenFile
             _fileAssociationGroup.Controls.Add(_registerCsvButton);
             _fileAssociationGroup.Controls.Add(_unregisterButton);
 
+            // Custom application group
+            _customApplicationGroup = new GroupBox
+            {
+                Text = "사용자 지정 응용 프로그램",
+                Dock = DockStyle.Fill,
+                Padding = new Padding(10)
+            };
+
+            var customAppLabel = new Label
+            {
+                Text = "파일 확장자별로 사용할 응용 프로그램을 지정할 수 있습니다:",
+                Location = new Point(20, 20),
+                AutoSize = true
+            };
+            _customApplicationGroup.Controls.Add(customAppLabel);
+
+            _applicationListView = new ListView
+            {
+                Location = new Point(20, 45),
+                Size = new Size(560, 110),
+                View = View.Details,
+                FullRowSelect = true,
+                GridLines = true
+            };
+            _applicationListView.Columns.Add("확장자", 100);
+            _applicationListView.Columns.Add("응용 프로그램 경로", 450);
+            _customApplicationGroup.Controls.Add(_applicationListView);
+
+            _addApplicationButton = new Button
+            {
+                Text = "추가/수정",
+                Location = new Point(590, 45),
+                Width = 80,
+                Height = 30
+            };
+            _addApplicationButton.Click += OnAddApplicationClick;
+            _customApplicationGroup.Controls.Add(_addApplicationButton);
+
+            _removeApplicationButton = new Button
+            {
+                Text = "제거",
+                Location = new Point(590, 85),
+                Width = 80,
+                Height = 30
+            };
+            _removeApplicationButton.Click += OnRemoveApplicationClick;
+            _customApplicationGroup.Controls.Add(_removeApplicationButton);
+
             // Log textbox
             _logTextBox = new TextBox
             {
@@ -134,8 +187,9 @@ namespace UnlockOpenFile
 
             mainPanel.Controls.Add(_startupGroup, 0, 0);
             mainPanel.Controls.Add(_fileAssociationGroup, 0, 1);
-            mainPanel.Controls.Add(_logTextBox, 0, 2);
-            mainPanel.Controls.Add(_closeButton, 0, 3);
+            mainPanel.Controls.Add(_customApplicationGroup, 0, 2);
+            mainPanel.Controls.Add(_logTextBox, 0, 3);
+            mainPanel.Controls.Add(_closeButton, 0, 4);
 
             this.Controls.Add(mainPanel);
 
@@ -154,10 +208,25 @@ namespace UnlockOpenFile
                     var value = key.GetValue("UnlockOpenFile");
                     _startupCheckBox.Checked = value != null;
                 }
+
+                // Load custom application paths
+                LoadCustomApplications();
             }
             catch (Exception ex)
             {
                 AddLog($"설정 로드 오류: {ex.Message}");
+            }
+        }
+
+        private void LoadCustomApplications()
+        {
+            _applicationListView.Items.Clear();
+            var apps = ApplicationSettings.GetAllApplicationPaths();
+            foreach (var app in apps)
+            {
+                var item = new ListViewItem(app.Key);
+                item.SubItems.Add(app.Value);
+                _applicationListView.Items.Add(item);
             }
         }
 
@@ -246,6 +315,129 @@ namespace UnlockOpenFile
             catch (Exception ex)
             {
                 AddLog($"파일 연결 해제 오류: {ex.Message}");
+            }
+        }
+
+        private void OnAddApplicationClick(object? sender, EventArgs e)
+        {
+            // Create a simple input dialog for extension
+            using var extensionDialog = new Form
+            {
+                Text = "확장자 입력",
+                Size = new Size(400, 150),
+                StartPosition = FormStartPosition.CenterParent,
+                FormBorderStyle = FormBorderStyle.FixedDialog,
+                MaximizeBox = false,
+                MinimizeBox = false
+            };
+
+            var label = new Label
+            {
+                Text = "파일 확장자를 입력하세요 (예: .txt, .xlsx):",
+                Location = new Point(20, 20),
+                AutoSize = true
+            };
+
+            var textBox = new TextBox
+            {
+                Location = new Point(20, 45),
+                Width = 340
+            };
+
+            var okButton = new Button
+            {
+                Text = "확인",
+                DialogResult = DialogResult.OK,
+                Location = new Point(200, 75),
+                Width = 80
+            };
+
+            var cancelButton = new Button
+            {
+                Text = "취소",
+                DialogResult = DialogResult.Cancel,
+                Location = new Point(290, 75),
+                Width = 80
+            };
+
+            extensionDialog.Controls.Add(label);
+            extensionDialog.Controls.Add(textBox);
+            extensionDialog.Controls.Add(okButton);
+            extensionDialog.Controls.Add(cancelButton);
+            extensionDialog.AcceptButton = okButton;
+            extensionDialog.CancelButton = cancelButton;
+
+            if (extensionDialog.ShowDialog() == DialogResult.OK)
+            {
+                var extension = textBox.Text.Trim();
+                if (string.IsNullOrEmpty(extension))
+                {
+                    MessageBox.Show("확장자를 입력해주세요.", "오류", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+
+                if (!extension.StartsWith("."))
+                {
+                    extension = "." + extension;
+                }
+
+                // Open file dialog to select application
+                using var openFileDialog = new OpenFileDialog
+                {
+                    Title = $"{extension} 파일을 열 응용 프로그램 선택",
+                    Filter = "실행 파일 (*.exe)|*.exe|모든 파일 (*.*)|*.*",
+                    FilterIndex = 1
+                };
+
+                if (openFileDialog.ShowDialog() == DialogResult.OK)
+                {
+                    try
+                    {
+                        ApplicationSettings.SetApplicationPath(extension, openFileDialog.FileName);
+                        AddLog($"{extension} 파일을 {System.IO.Path.GetFileName(openFileDialog.FileName)}(으)로 여는 설정이 저장되었습니다.");
+                        LoadCustomApplications();
+                    }
+                    catch (Exception ex)
+                    {
+                        AddLog($"응용 프로그램 설정 오류: {ex.Message}");
+                        MessageBox.Show($"응용 프로그램 설정에 실패했습니다: {ex.Message}", "오류",
+                            MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                }
+            }
+        }
+
+        private void OnRemoveApplicationClick(object? sender, EventArgs e)
+        {
+            if (_applicationListView.SelectedItems.Count == 0)
+            {
+                MessageBox.Show("제거할 항목을 선택해주세요.", "알림", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            var selectedItem = _applicationListView.SelectedItems[0];
+            var extension = selectedItem.Text;
+
+            var result = MessageBox.Show(
+                $"{extension} 확장자의 사용자 지정 응용 프로그램 설정을 제거하시겠습니까?",
+                "확인",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Question);
+
+            if (result == DialogResult.Yes)
+            {
+                try
+                {
+                    ApplicationSettings.RemoveApplicationPath(extension);
+                    AddLog($"{extension} 확장자의 사용자 지정 응용 프로그램 설정이 제거되었습니다.");
+                    LoadCustomApplications();
+                }
+                catch (Exception ex)
+                {
+                    AddLog($"응용 프로그램 설정 제거 오류: {ex.Message}");
+                    MessageBox.Show($"설정 제거에 실패했습니다: {ex.Message}", "오류",
+                        MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
             }
         }
 
