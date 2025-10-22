@@ -80,6 +80,7 @@ All requirements from the problem statement are implemented:
 - Priority system: custom settings > Windows registry > common defaults
 - FileSaved event handlers in MainForm and FileOpenerForm for complete sync feedback
 - Balloon notifications when file save to original completes successfully
+- Pending save task tracking to prevent premature cleanup
 
 ### Changed
 - FileManager now checks custom application settings before falling back to Windows defaults
@@ -87,11 +88,14 @@ All requirements from the problem statement are implemented:
 - Updated documentation (README.md, USAGE_GUIDE.md) with custom application feature
 - Enhanced automatic sync feature to show both start and completion notifications
 - README.md updated to mention system notifications for sync completion
+- Cleanup() now waits for pending save operations to complete before deleting temp files
 
 ### Fixed
 - Temporary files now open with user-specified applications instead of always using Notepad
 - Users can now override system default applications through UI
 - FileSaved event is now properly utilized to notify users when sync completes
+- **Critical fix**: Program no longer terminates prematurely when editor closes, ensuring all changes are saved to original file
+- Save operations are now tracked and awaited before cleanup, preventing data loss
 
 ## [Unreleased - Future]
 

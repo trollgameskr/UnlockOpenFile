@@ -14,6 +14,9 @@ namespace UnlockOpenFile
         private DateTime _lastModified;
         private bool _isModified = false;
         private Process? _openedProcess;
+        private Task? _pendingSaveTask;
+        private DateTime _fileOpenedTime;
+        private System.Threading.Timer? _fileMonitorTimer;
 
         public event EventHandler<string>? StatusChanged;
         public event EventHandler? FileModified;
@@ -41,6 +44,7 @@ namespace UnlockOpenFile
                 OnStatusChanged("원본 파일 복사 중...");
                 File.Copy(_originalFilePath, _tempFilePath, true);
                 _lastModified = File.GetLastWriteTime(_tempFilePath);
+                _fileOpenedTime = DateTime.Now;
                 
                 // Start monitoring the temp file
                 StartFileWatcher();
@@ -86,11 +90,18 @@ namespace UnlockOpenFile
 
                 OnStatusChanged($"파일이 열렸습니다: {Path.GetFileName(_tempFilePath)}");
                 
-                // Monitor process exit
-                if (_openedProcess != null)
+                // Monitor process exit, but handle cases where the process exits immediately
+                // (e.g., single-instance applications like Excel)
+                if (_openedProcess != null && !_openedProcess.HasExited)
                 {
                     _openedProcess.EnableRaisingEvents = true;
                     _openedProcess.Exited += OnProcessExited;
+                }
+                else
+                {
+                    // Process already exited or wasn't tracked - this is common with
+                    // single-instance apps. Keep monitoring via FileSystemWatcher.
+                    OnStatusChanged("프로세스 모니터링을 사용할 수 없습니다. 파일 변경 모니터링만 사용합니다.");
                 }
                 
                 return Task.FromResult(true);
@@ -133,8 +144,9 @@ namespace UnlockOpenFile
                     _isModified = true;
                     FileModified?.Invoke(this, EventArgs.Empty);
                     
-                    // Save back to original
-                    await SaveToOriginalAsync();
+                    // Save back to original and track the task
+                    _pendingSaveTask = SaveToOriginalAsync();
+                    await _pendingSaveTask;
                 }
             }
             catch (Exception ex)
@@ -179,16 +191,107 @@ namespace UnlockOpenFile
 
         private async void OnProcessExited(object? sender, EventArgs e)
         {
+            // Check if process exited very quickly (within 3 seconds of opening)
+            // This usually means it was a launcher process for a single-instance app
+            var timeSinceOpen = DateTime.Now - _fileOpenedTime;
+            if (timeSinceOpen.TotalSeconds < 3)
+            {
+                OnStatusChanged("프로세스가 즉시 종료되었습니다. 단일 인스턴스 응용 프로그램일 수 있습니다.");
+                OnStatusChanged("파일이 계속 열려 있습니다. 수동으로 닫거나 임시 파일이 삭제될 때까지 모니터링합니다.");
+                
+                // Start a timer to periodically check if the temp file still exists
+                StartFileMonitoring();
+                return;
+            }
+            
             OnStatusChanged("프로그램이 종료되었습니다.");
             
             // Final save if modified
             if (_isModified)
             {
-                await SaveToOriginalAsync();
+                _pendingSaveTask = SaveToOriginalAsync();
+                await _pendingSaveTask;
             }
             
             // Notify that the process has exited
             ProcessExited?.Invoke(this, EventArgs.Empty);
+        }
+
+        private void StartFileMonitoring()
+        {
+            // Check every 5 seconds if the temp file is still being used
+            _fileMonitorTimer = new System.Threading.Timer(async _ =>
+            {
+                try
+                {
+                    if (!File.Exists(_tempFilePath))
+                    {
+                        // File was deleted, user is done
+                        OnStatusChanged("임시 파일이 삭제되었습니다. 파일을 닫습니다.");
+                        StopFileMonitoring();
+                        
+                        // Final save if modified
+                        if (_isModified)
+                        {
+                            _pendingSaveTask = SaveToOriginalAsync();
+                            await _pendingSaveTask;
+                        }
+                        
+                        ProcessExited?.Invoke(this, EventArgs.Empty);
+                        return;
+                    }
+                    
+                    // Check if file is still locked (being used by another process)
+                    if (!IsFileLocked(_tempFilePath))
+                    {
+                        // File exists but is not locked - check if it hasn't been modified for a while
+                        var timeSinceLastModify = DateTime.Now - _lastModified;
+                        if (timeSinceLastModify.TotalMinutes > 5)
+                        {
+                            // File hasn't been modified in 5 minutes and isn't locked
+                            // User probably closed the editor
+                            OnStatusChanged("파일이 5분 이상 수정되지 않았습니다. 파일을 닫습니다.");
+                            StopFileMonitoring();
+                            
+                            // Final save if modified
+                            if (_isModified)
+                            {
+                                _pendingSaveTask = SaveToOriginalAsync();
+                                await _pendingSaveTask;
+                            }
+                            
+                            ProcessExited?.Invoke(this, EventArgs.Empty);
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    OnStatusChanged($"파일 모니터링 오류: {ex.Message}");
+                }
+            }, null, TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5));
+        }
+
+        private void StopFileMonitoring()
+        {
+            _fileMonitorTimer?.Dispose();
+            _fileMonitorTimer = null;
+        }
+
+        private bool IsFileLocked(string filePath)
+        {
+            try
+            {
+                using var stream = File.Open(filePath, FileMode.Open, FileAccess.Read, FileShare.None);
+                return false;
+            }
+            catch (IOException)
+            {
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
         }
 
         private string? GetActualDefaultApplication(string extension)
@@ -342,6 +445,16 @@ namespace UnlockOpenFile
         {
             try
             {
+                // Stop file monitoring timer
+                StopFileMonitoring();
+                
+                // Wait for any pending save operation to complete
+                if (_pendingSaveTask != null && !_pendingSaveTask.IsCompleted)
+                {
+                    OnStatusChanged("저장 작업 완료 대기 중...");
+                    _pendingSaveTask.Wait(TimeSpan.FromSeconds(10)); // Wait up to 10 seconds
+                }
+                
                 _fileWatcher?.Dispose();
                 
                 if (File.Exists(_tempFilePath))
