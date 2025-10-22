@@ -11,6 +11,7 @@
 - **[ARCHITECTURE.md](ARCHITECTURE.md)** - 기술 아키텍처 문서
 - **[IMPLEMENTATION_SUMMARY.md](IMPLEMENTATION_SUMMARY.md)** - 구현 개요
 - **[CHANGELOG.md](CHANGELOG.md)** - 버전 변경 이력
+- **[TAG_UPDATE_GUIDE.md](TAG_UPDATE_GUIDE.md)** - 태그 업데이트 가이드 (빌드 워크플로우 관련)
 - **[examples/](examples/)** - 사용 예제 스크립트
 
 ## 기능
