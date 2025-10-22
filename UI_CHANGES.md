@@ -1,7 +1,27 @@
-# UI Changes - Custom Application Selector
+# UI Changes
 
 ## Overview
-This document describes the UI changes made to the SettingsForm to support custom application selection.
+This document describes the UI changes made to the application.
+
+## Recent Changes (2025-10-22)
+
+### 1. File Copy History UI Logging
+When a modified copy file is saved back to the original file, the following UI updates occur:
+- **Log Entry**: "저장 완료: {filename} - 변경 사항이 원본에 저장되었습니다." (Save complete: {filename} - changes saved to original file)
+- **System Tray Notification**: A balloon tip notification appears showing the save was successful
+- **Location**: MainForm.cs, lines 189-199 (FileSaved event handler)
+
+### 2. Delayed Program Close (5-Second Countdown)
+When all files are closed, the program no longer closes immediately. Instead:
+- **Initial Message**: "모든 파일이 닫혔습니다. 5초 후 프로그램을 종료합니다." (All files closed. Program will close in 5 seconds)
+- **Countdown**: Logs appear each second: "4초 후 종료...", "3초 후 종료...", etc.
+- **Final Message**: "프로그램을 종료합니다." (Closing program)
+- **Location**: MainForm.cs, lines 270-303
+- **Timer Cleanup**: Timer is properly disposed when form closes (lines 328-330)
+
+## Previous Changes - Custom Application Selector
+
+This section describes the UI changes made to the SettingsForm to support custom application selection.
 
 ## Settings Form Layout (Before)
 
