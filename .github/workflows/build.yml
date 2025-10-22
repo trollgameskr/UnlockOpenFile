@@ -36,10 +36,9 @@ jobs:
         Compress-Archive -Path ./publish/* -DestinationPath UnlockOpenFile-${{ github.ref_name }}.zip
       shell: pwsh
     
-    - name: Create Release
-      uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844  # v1
-      with:
-        files: |
+    - name: Create Release with GitHub CLI
+      run: |
+        $releaseBody = @"
           UnlockOpenFile-${{ github.ref_name }}-standalone.zip
           UnlockOpenFile-${{ github.ref_name }}.zip
         body: |
@@ -60,7 +59,11 @@ jobs:
           1. ZIP 파일을 다운로드하여 압축을 풉니다
           2. UnlockOpenFile.exe를 실행합니다
           3. 자세한 사용법은 [README.md](https://github.com/trollgameskr/UnlockOpenFile/blob/main/README.md)를 참조하세요
-        draft: false
-        prerelease: false
+        "@
+        gh release create ${{ github.ref_name }} `
+          UnlockOpenFile-${{ github.ref_name }}-win-x64.zip `
+          --title "UnlockOpenFile ${{ github.ref_name }}" `
+          --notes "$releaseBody"
+      shell: pwsh
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
