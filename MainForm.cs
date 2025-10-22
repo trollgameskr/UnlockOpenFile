@@ -267,39 +267,16 @@ namespace UnlockOpenFile
 
                 AddLog($"파일 닫힘: {System.IO.Path.GetFileName(filePath)}");
 
-                // If no more files are open, close the application after 5 seconds
+                // If no more files are open, close the application immediately
                 if (_fileManagers.Count == 0)
                 {
-                    AddLog("모든 파일이 닫혔습니다. 5초 후 프로그램을 종료합니다.");
+                    AddLog("모든 파일이 닫혔습니다. 프로그램을 종료합니다.");
                     
                     // Cancel any existing close timer
                     _closeTimer?.Dispose();
+                    _closeTimer = null;
                     
-                    // Create a countdown timer that updates every second
-                    int countdown = 5;
-                    _closeTimer = new System.Threading.Timer(_ =>
-                    {
-                        if (this.IsDisposed) return;
-                        
-                        if (this.InvokeRequired)
-                        {
-                            this.Invoke(() =>
-                            {
-                                countdown--;
-                                if (countdown > 0)
-                                {
-                                    AddLog($"{countdown}초 후 종료...");
-                                }
-                                else
-                                {
-                                    AddLog("프로그램을 종료합니다.");
-                                    _closeTimer?.Dispose();
-                                    _closeTimer = null;
-                                    this.Close();
-                                }
-                            });
-                        }
-                    }, null, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1));
+                    this.Close();
                 }
             }
             catch (Exception ex)
