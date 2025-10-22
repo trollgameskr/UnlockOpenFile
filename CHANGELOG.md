@@ -78,15 +78,20 @@ All requirements from the problem statement are implemented:
 - Add/Modify button to configure custom application for file extensions
 - Remove button to delete custom application associations
 - Priority system: custom settings > Windows registry > common defaults
+- FileSaved event handlers in MainForm and FileOpenerForm for complete sync feedback
+- Balloon notifications when file save to original completes successfully
 
 ### Changed
 - FileManager now checks custom application settings before falling back to Windows defaults
 - SettingsForm increased height to 700px to accommodate new UI section
 - Updated documentation (README.md, USAGE_GUIDE.md) with custom application feature
+- Enhanced automatic sync feature to show both start and completion notifications
+- README.md updated to mention system notifications for sync completion
 
 ### Fixed
 - Temporary files now open with user-specified applications instead of always using Notepad
 - Users can now override system default applications through UI
+- FileSaved event is now properly utilized to notify users when sync completes
 
 ## [Unreleased - Future]
 
