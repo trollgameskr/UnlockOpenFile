@@ -71,6 +71,25 @@ All requirements from the problem statement are implemented:
 
 ## [Unreleased]
 
+### Added
+- Custom application selector UI for per-extension application configuration
+- ApplicationSettings class for managing custom application paths in registry
+- ListView in SettingsForm to display and manage custom applications
+- Add/Modify button to configure custom application for file extensions
+- Remove button to delete custom application associations
+- Priority system: custom settings > Windows registry > common defaults
+
+### Changed
+- FileManager now checks custom application settings before falling back to Windows defaults
+- SettingsForm increased height to 700px to accommodate new UI section
+- Updated documentation (README.md, USAGE_GUIDE.md) with custom application feature
+
+### Fixed
+- Temporary files now open with user-specified applications instead of always using Notepad
+- Users can now override system default applications through UI
+
+## [Unreleased - Future]
+
 ### Planned for Future Releases
 - Multi-language support (English, Japanese, etc.)
 - Configurable sync delay in settings
