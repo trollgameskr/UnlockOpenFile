@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Windows.Forms;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace UnlockOpenFile
 {
@@ -14,6 +15,7 @@ namespace UnlockOpenFile
         private Button _closeAllButton = null!;
         private NotifyIcon? _notifyIcon;
         private readonly Dictionary<string, FileManager> _fileManagers = new();
+        private System.Threading.Timer? _closeTimer;
 
         public MainForm()
         {
@@ -265,11 +267,39 @@ namespace UnlockOpenFile
 
                 AddLog($"파일 닫힘: {System.IO.Path.GetFileName(filePath)}");
 
-                // If no more files are open, close the application
+                // If no more files are open, close the application after 5 seconds
                 if (_fileManagers.Count == 0)
                 {
-                    AddLog("모든 파일이 닫혔습니다. 프로그램을 종료합니다.");
-                    this.Close();
+                    AddLog("모든 파일이 닫혔습니다. 5초 후 프로그램을 종료합니다.");
+                    
+                    // Cancel any existing close timer
+                    _closeTimer?.Dispose();
+                    
+                    // Create a countdown timer that updates every second
+                    int countdown = 5;
+                    _closeTimer = new System.Threading.Timer(_ =>
+                    {
+                        if (this.IsDisposed) return;
+                        
+                        if (this.InvokeRequired)
+                        {
+                            this.Invoke(() =>
+                            {
+                                countdown--;
+                                if (countdown > 0)
+                                {
+                                    AddLog($"{countdown}초 후 종료...");
+                                }
+                                else
+                                {
+                                    AddLog("프로그램을 종료합니다.");
+                                    _closeTimer?.Dispose();
+                                    _closeTimer = null;
+                                    this.Close();
+                                }
+                            });
+                        }
+                    }, null, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1));
                 }
             }
             catch (Exception ex)
@@ -295,6 +325,10 @@ namespace UnlockOpenFile
 
         private void OnFormClosing(object? sender, FormClosingEventArgs e)
         {
+            // Cancel any pending close timer
+            _closeTimer?.Dispose();
+            _closeTimer = null;
+            
             // Clean up all file managers
             foreach (var fileManager in _fileManagers.Values)
             {
