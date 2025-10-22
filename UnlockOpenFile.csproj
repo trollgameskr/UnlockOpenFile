@@ -8,6 +8,35 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    
+    <!-- Assembly Information to reduce false positives -->
+    <AssemblyName>UnlockOpenFile</AssemblyName>
+    <AssemblyTitle>UnlockOpenFile</AssemblyTitle>
+    <Product>UnlockOpenFile</Product>
+    <Company>trollgameskr</Company>
+    <Copyright>Copyright © 2024 trollgameskr. Licensed under MIT License.</Copyright>
+    <Description>A Windows application that allows editing files (Excel, CSV) without locking the original file by creating temporary copies</Description>
+    <Version>0.9.8</Version>
+    <FileVersion>0.9.8.0</FileVersion>
+    <AssemblyVersion>0.9.8.0</AssemblyVersion>
+    <NeutralLanguage>ko</NeutralLanguage>
+    <Authors>trollgameskr</Authors>
+    <PackageProjectUrl>https://github.com/trollgameskr/UnlockOpenFile</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/trollgameskr/UnlockOpenFile</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    
+    <!-- Enable deterministic builds for better reproducibility -->
+    <Deterministic>true</Deterministic>
+    <ContinuousIntegrationBuild Condition="'$(GITHUB_ACTIONS)' == 'true'">true</ContinuousIntegrationBuild>
+    
+    <!-- Add application icon -->
+    <ApplicationIcon />
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
 
 </Project>

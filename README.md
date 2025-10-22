@@ -4,10 +4,16 @@
 
 > 💡 **빠른 시작:** 5분 안에 시작하려면 [QUICKSTART.md](QUICKSTART.md)를 참조하세요!
 
+> 🛡️ **보안 안내:** Windows Defender 오탐 관련 안내는 [SECURITY.md](SECURITY.md)를 참조하세요!
+
+> 🔧 **오탐 해결:** Windows Defender 오탐 해결 방법은 [WINDOWS_DEFENDER_FIX.md](WINDOWS_DEFENDER_FIX.md)를 참조하세요!
+
 ## 📚 문서 가이드
 
 - **[QUICKSTART.md](QUICKSTART.md)** - 5분 빠른 시작 가이드
 - **[USAGE_GUIDE.md](USAGE_GUIDE.md)** - 상세 사용법과 시나리오
+- **[SECURITY.md](SECURITY.md)** - 보안 및 Windows Defender 오탐 안내
+- **[WINDOWS_DEFENDER_FIX.md](WINDOWS_DEFENDER_FIX.md)** - Windows Defender 오탐 해결 단계별 가이드
 - **[ARCHITECTURE.md](ARCHITECTURE.md)** - 기술 아키텍처 문서
 - **[IMPLEMENTATION_SUMMARY.md](IMPLEMENTATION_SUMMARY.md)** - 구현 개요
 - **[CHANGELOG.md](CHANGELOG.md)** - 버전 변경 이력

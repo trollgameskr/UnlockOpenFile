@@ -39,33 +39,78 @@ jobs:
         Compress-Archive -Path ./publish/* -DestinationPath UnlockOpenFile-${{ github.ref_name }}.zip
       shell: pwsh
     
+    - name: Calculate checksums
+      run: |
+        $standaloneHash = (Get-FileHash -Algorithm SHA256 "UnlockOpenFile-${{ github.ref_name }}-standalone.zip").Hash
+        $regularHash = (Get-FileHash -Algorithm SHA256 "UnlockOpenFile-${{ github.ref_name }}.zip").Hash
+        
+        @"
+        SHA256 Checksums:
+        - UnlockOpenFile-${{ github.ref_name }}-standalone.zip: $standaloneHash
+        - UnlockOpenFile-${{ github.ref_name }}.zip: $regularHash
+        "@ | Out-File -FilePath checksums.txt -Encoding utf8
+        
+        # Display for logs
+        Get-Content checksums.txt
+        
+        # Set as environment variable for release notes
+        "STANDALONE_SHA256=$standaloneHash" >> $env:GITHUB_ENV
+        "REGULAR_SHA256=$regularHash" >> $env:GITHUB_ENV
+      shell: pwsh
+    
     - name: Create Release with GitHub CLI
       run: |
         $releaseBody = @"
-          UnlockOpenFile-${{ github.ref_name }}-standalone.zip
-          UnlockOpenFile-${{ github.ref_name }}.zip
-        body: |
-          ## UnlockOpenFile ${{ github.ref_name }}
-          
-          ### 다운로드
-          
-          - **UnlockOpenFile-${{ github.ref_name }}-standalone.zip**: .NET Runtime이 포함된 자체 포함형 빌드
-          - **UnlockOpenFile-${{ github.ref_name }}.zip**: .NET 8.0 Runtime이 필요한 경량 빌드
-          
-          ### 요구 사항
-          
-          - Windows 10 이상
-          - .NET 8.0 Runtime (경량 빌드를 사용하는 경우)
-          
-          ### 사용 방법
-          
-          1. ZIP 파일을 다운로드하여 압축을 풉니다
-          2. UnlockOpenFile.exe를 실행합니다
-          3. 자세한 사용법은 [README.md](https://github.com/trollgameskr/UnlockOpenFile/blob/main/README.md)를 참조하세요
+        ## UnlockOpenFile ${{ github.ref_name }}
+        
+        ### 다운로드
+        
+        - **UnlockOpenFile-${{ github.ref_name }}-standalone.zip**: .NET Runtime이 포함된 자체 포함형 빌드 (권장)
+        - **UnlockOpenFile-${{ github.ref_name }}.zip**: .NET 8.0 Runtime이 필요한 경량 빌드
+        
+        ### 🛡️ 보안 안내
+        
+        **Windows Defender 오탐 (False Positive) 알림:**
+        
+        이 프로그램은 완전히 안전한 오픈소스 소프트웨어입니다. Windows Defender가 바이러스로 탐지할 수 있으나, 이는 오탐(False Positive)입니다.
+        
+        - ✅ **소스 코드 공개**: 모든 코드가 GitHub에서 검증 가능합니다
+        - ✅ **MIT 라이선스**: 자유롭게 사용 가능한 오픈소스입니다
+        - ✅ **악성 코드 없음**: 네트워크 통신, 데이터 수집 등 의심스러운 동작이 없습니다
+        
+        오탐이 발생하는 이유는 파일 모니터링, 프로세스 추적, 레지스트리 접근 등의 기능 때문입니다. 자세한 내용과 해결 방법은 [SECURITY.md](https://github.com/trollgameskr/UnlockOpenFile/blob/main/SECURITY.md)를 참조하세요.
+        
+        ### 파일 검증
+        
+        **SHA256 Checksums:**
+        \`\`\`
+        UnlockOpenFile-${{ github.ref_name }}-standalone.zip: $env:STANDALONE_SHA256
+        UnlockOpenFile-${{ github.ref_name }}.zip: $env:REGULAR_SHA256
+        \`\`\`
+        
+        **VirusTotal 검사:**
+        - 다운로드 후 [VirusTotal](https://www.virustotal.com)에 업로드하여 여러 보안 엔진의 검사 결과를 확인할 수 있습니다
+        - 대부분의 보안 엔진에서 안전한 것으로 판정됩니다
+        
+        ### 요구 사항
+        
+        - Windows 10 이상
+        - .NET 8.0 Runtime (경량 빌드를 사용하는 경우)
+        
+        ### 사용 방법
+        
+        1. ZIP 파일을 다운로드하여 압축을 풉니다
+        2. UnlockOpenFile.exe를 실행합니다
+        3. 자세한 사용법은 [README.md](https://github.com/trollgameskr/UnlockOpenFile/blob/main/README.md)를 참조하세요
+        
+        ### 오픈소스
+        
+        이 프로젝트는 MIT 라이선스 하에 배포되는 무료 오픈소스 소프트웨어입니다. [소스 코드](https://github.com/trollgameskr/UnlockOpenFile)를 직접 확인하고 빌드할 수 있습니다.
         "@
         gh release create ${{ github.ref_name }} `
           UnlockOpenFile-${{ github.ref_name }}-standalone.zip `
           UnlockOpenFile-${{ github.ref_name }}.zip `
+          checksums.txt `
           --title "UnlockOpenFile ${{ github.ref_name }}" `
           --notes "$releaseBody"
       shell: pwsh
