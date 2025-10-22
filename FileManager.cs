@@ -134,8 +134,9 @@ namespace UnlockOpenFile
                     _isModified = true;
                     FileModified?.Invoke(this, EventArgs.Empty);
                     
-                    // Save back to original
-                    await SaveToOriginalAsync();
+                    // Save back to original and track the task
+                    _pendingSaveTask = SaveToOriginalAsync();
+                    await _pendingSaveTask;
                 }
             }
             catch (Exception ex)
