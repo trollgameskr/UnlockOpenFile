@@ -125,6 +125,15 @@ namespace UnlockOpenFile
                         "파일이 수정되어 원본에 저장 중입니다.", ToolTipIcon.Info));
                 }
             };
+
+            _fileManager.FileSaved += (s, e) =>
+            {
+                if (this.InvokeRequired)
+                {
+                    this.Invoke(() => _notifyIcon?.ShowBalloonTip(2000, "저장 완료", 
+                        "변경 사항이 원본 파일에 저장되었습니다.", ToolTipIcon.Info));
+                }
+            };
             
             _fileManager.ProcessExited += (s, e) =>
             {
