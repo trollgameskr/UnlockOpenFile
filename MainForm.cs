@@ -184,6 +184,20 @@ namespace UnlockOpenFile
                     }
                 };
 
+                fileManager.FileSaved += (s, e) =>
+                {
+                    if (this.InvokeRequired)
+                    {
+                        this.Invoke(() =>
+                        {
+                            AddLog($"저장 완료: {System.IO.Path.GetFileName(filePath)} - 변경 사항이 원본에 저장되었습니다.");
+                            _notifyIcon?.ShowBalloonTip(2000, "저장 완료",
+                                $"{System.IO.Path.GetFileName(filePath)}의 변경 사항이 원본 파일에 저장되었습니다.",
+                                ToolTipIcon.Info);
+                        });
+                    }
+                };
+
                 fileManager.ProcessExited += (s, e) =>
                 {
                     if (this.InvokeRequired)
