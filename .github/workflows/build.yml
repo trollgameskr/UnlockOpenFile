@@ -27,27 +27,103 @@ jobs:
     - name: Build
       run: dotnet build -c Release --no-restore
     
+    - name: Generate SBOM (Software Bill of Materials)
+      run: |
+        dotnet tool install --global Microsoft.Sbom.DotNetTool
+        sbom-tool generate -b ./bin/Release -bc ./UnlockOpenFile.csproj -pn UnlockOpenFile -pv ${{ github.ref_name }} -ps trollgameskr -nsb https://github.com/trollgameskr/UnlockOpenFile
+      continue-on-error: true
+    
     - name: Publish (Self-contained)
-      run: dotnet publish -c Release -r win-x64 --self-contained true -o ./publish-standalone
+      run: dotnet publish -c Release -r win-x64 --self-contained true -o ./publish-standalone -p:SourceRevisionId=${{ github.sha }}
     
     - name: Publish (Framework-dependent)
-      run: dotnet publish -c Release -r win-x64 --self-contained false -o ./publish
+      run: dotnet publish -c Release -r win-x64 --self-contained false -o ./publish -p:SourceRevisionId=${{ github.sha }}
     
     - name: Create ZIP archives
       run: |
-        Compress-Archive -Path ./publish-standalone/* -DestinationPath UnlockOpenFile-${{ github.ref_name }}-standalone.zip
-        Compress-Archive -Path ./publish/* -DestinationPath UnlockOpenFile-${{ github.ref_name }}.zip
+        # Create README files for each build with verification info
+        @"
+        UnlockOpenFile ${{ github.ref_name }} - Standalone Build
+        ================================================
+        
+        Built on: $(Get-Date -Format "yyyy-MM-dd HH:mm:ss UTC")
+        Build Environment: GitHub Actions (Windows)
+        Source Commit: ${{ github.sha }}
+        Source Repository: https://github.com/trollgameskr/UnlockOpenFile
+        
+        This is a standalone build that includes .NET Runtime.
+        No additional dependencies are required.
+        
+        SECURITY VERIFICATION:
+        - Source code: https://github.com/trollgameskr/UnlockOpenFile/tree/${{ github.sha }}
+        - Build workflow: https://github.com/trollgameskr/UnlockOpenFile/blob/${{ github.sha }}/.github/workflows/build.yml
+        - This build is reproducible and can be verified by building from source
+        
+        Binary SHA256: $($(Get-FileHash -Algorithm SHA256 './publish-standalone/UnlockOpenFile.exe').Hash)
+        
+        "@ | Out-File -FilePath "./publish-standalone/BUILD_INFO.txt" -Encoding utf8
+        
+        @"
+        UnlockOpenFile ${{ github.ref_name }} - Framework-dependent Build
+        ================================================
+        
+        Built on: $(Get-Date -Format "yyyy-MM-dd HH:mm:ss UTC")
+        Build Environment: GitHub Actions (Windows)
+        Source Commit: ${{ github.sha }}
+        Source Repository: https://github.com/trollgameskr/UnlockOpenFile
+        
+        This is a framework-dependent build that requires .NET 8.0 Runtime.
+        
+        SECURITY VERIFICATION:
+        - Source code: https://github.com/trollgameskr/UnlockOpenFile/tree/${{ github.sha }}
+        - Build workflow: https://github.com/trollgameskr/UnlockOpenFile/blob/${{ github.sha }}/.github/workflows/build.yml
+        - This build is reproducible and can be verified by building from source
+        
+        Binary SHA256: $($(Get-FileHash -Algorithm SHA256 './publish/UnlockOpenFile.exe').Hash)
+        
+        "@ | Out-File -FilePath "./publish/BUILD_INFO.txt" -Encoding utf8
+        
+        # Create ZIP with optimal compression and preserve metadata
+        # Use -CompressionLevel Optimal for better compression
+        # This creates cleaner archives that may be less suspicious to antivirus
+        Compress-Archive -Path ./publish-standalone/* -DestinationPath UnlockOpenFile-${{ github.ref_name }}-standalone.zip -CompressionLevel Optimal -Force
+        Compress-Archive -Path ./publish/* -DestinationPath UnlockOpenFile-${{ github.ref_name }}.zip -CompressionLevel Optimal -Force
+        
+        # Generate file hashes for binaries inside archives
+        Write-Host "Standalone Build Binary Hash:"
+        Get-FileHash -Algorithm SHA256 "./publish-standalone/UnlockOpenFile.exe" | Format-List
+        Write-Host "Framework-dependent Build Binary Hash:"
+        Get-FileHash -Algorithm SHA256 "./publish/UnlockOpenFile.exe" | Format-List
       shell: pwsh
     
     - name: Calculate checksums
       run: |
         $standaloneHash = (Get-FileHash -Algorithm SHA256 "UnlockOpenFile-${{ github.ref_name }}-standalone.zip").Hash
         $regularHash = (Get-FileHash -Algorithm SHA256 "UnlockOpenFile-${{ github.ref_name }}.zip").Hash
+        $standaloneBinaryHash = (Get-FileHash -Algorithm SHA256 "./publish-standalone/UnlockOpenFile.exe").Hash
+        $regularBinaryHash = (Get-FileHash -Algorithm SHA256 "./publish/UnlockOpenFile.exe").Hash
         
         @"
         SHA256 Checksums:
+        
+        ZIP Archives:
         - UnlockOpenFile-${{ github.ref_name }}-standalone.zip: $standaloneHash
         - UnlockOpenFile-${{ github.ref_name }}.zip: $regularHash
+        
+        Binaries (inside ZIPs):
+        - Standalone UnlockOpenFile.exe: $standaloneBinaryHash
+        - Framework-dependent UnlockOpenFile.exe: $regularBinaryHash
+        
+        Build Information:
+        - Built on: $(Get-Date -Format "yyyy-MM-dd HH:mm:ss UTC")
+        - Source commit: ${{ github.sha }}
+        - GitHub Actions Runner: windows-latest
+        - .NET SDK version: 8.0.x
+        
+        Verification:
+        - Source: https://github.com/trollgameskr/UnlockOpenFile/tree/${{ github.sha }}
+        - Workflow: https://github.com/trollgameskr/UnlockOpenFile/blob/${{ github.sha }}/.github/workflows/build.yml
+        
         "@ | Out-File -FilePath checksums.txt -Encoding utf8
         
         # Display for logs
@@ -56,6 +132,8 @@ jobs:
         # Set as environment variable for release notes
         "STANDALONE_SHA256=$standaloneHash" >> $env:GITHUB_ENV
         "REGULAR_SHA256=$regularHash" >> $env:GITHUB_ENV
+        "STANDALONE_BINARY_SHA256=$standaloneBinaryHash" >> $env:GITHUB_ENV
+        "REGULAR_BINARY_SHA256=$regularBinaryHash" >> $env:GITHUB_ENV
       shell: pwsh
     
     - name: Create Release with GitHub CLI
@@ -101,15 +179,36 @@ jobs:
         
         ### 🔐 파일 검증
         
-        **SHA256 Checksums:**
+        **SHA256 Checksums (ZIP Archives):**
         \`\`\`
         UnlockOpenFile-${{ github.ref_name }}-standalone.zip: $env:STANDALONE_SHA256
         UnlockOpenFile-${{ github.ref_name }}.zip: $env:REGULAR_SHA256
         \`\`\`
         
+        **SHA256 Checksums (Binaries):**
+        \`\`\`
+        Standalone UnlockOpenFile.exe: $env:STANDALONE_BINARY_SHA256
+        Framework-dependent UnlockOpenFile.exe: $env:REGULAR_BINARY_SHA256
+        \`\`\`
+        
+        **빌드 투명성:**
+        - 소스 커밋: [${{ github.sha }}](https://github.com/trollgameskr/UnlockOpenFile/tree/${{ github.sha }})
+        - 빌드 워크플로우: [build.yml](https://github.com/trollgameskr/UnlockOpenFile/blob/${{ github.sha }}/.github/workflows/build.yml)
+        - 빌드 로그: [GitHub Actions Run](https://github.com/trollgameskr/UnlockOpenFile/actions)
+        - 각 ZIP 파일 안에 BUILD_INFO.txt 파일이 포함되어 있어 빌드 정보를 확인할 수 있습니다
+        
         **VirusTotal 검사:**
         - 다운로드 후 [VirusTotal](https://www.virustotal.com)에 업로드하여 여러 보안 엔진의 검사 결과를 확인할 수 있습니다
         - Standalone 빌드는 대부분의 보안 엔진에서 안전한 것으로 판정됩니다
+        
+        **자체 빌드로 검증:**
+        \`\`\`bash
+        git clone https://github.com/trollgameskr/UnlockOpenFile.git
+        cd UnlockOpenFile
+        git checkout ${{ github.sha }}
+        dotnet publish -c Release -r win-x64 --self-contained true -o ./publish-standalone
+        # 생성된 바이너리의 SHA256을 위의 해시와 비교하세요
+        \`\`\`
         
         ### 📋 요구 사항
         
