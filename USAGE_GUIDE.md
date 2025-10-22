@@ -40,6 +40,31 @@ Excel 또는 CSV 파일을 더블클릭하면 UnlockOpenFile을 통해 열립니
 - 레지스트리: `HKEY_CURRENT_USER\Software\Classes`
 - 관리자 권한 불필요
 
+### 사용자 지정 응용 프로그램 설정
+UnlockOpenFile을 통해 파일을 열 때 사용할 응용 프로그램을 직접 지정할 수 있습니다.
+
+**설정 방법:**
+1. 설정 창을 엽니다 (인자 없이 `UnlockOpenFile.exe` 실행)
+2. "사용자 지정 응용 프로그램" 섹션에서 "추가/수정" 버튼을 클릭합니다
+3. 파일 확장자를 입력합니다 (예: `.txt`, `.pdf`, `.docx`)
+4. 해당 파일 형식을 열 응용 프로그램 실행 파일(.exe)을 선택합니다
+5. 설정이 저장되고 목록에 표시됩니다
+
+**제거 방법:**
+1. 목록에서 제거할 항목을 선택합니다
+2. "제거" 버튼을 클릭합니다
+
+**동작 원리:**
+- 설정된 확장자의 파일을 UnlockOpenFile로 열면 지정한 응용 프로그램으로 임시 파일이 열립니다
+- 기본 Windows 파일 연결보다 우선순위가 높습니다
+- 설정은 레지스트리 `HKEY_CURRENT_USER\Software\UnlockOpenFile\Applications`에 저장됩니다
+
+**사용 예:**
+- `.txt` 파일을 메모장 대신 Notepad++로 열기
+- `.xlsx` 파일을 Excel 대신 LibreOffice Calc로 열기
+- `.pdf` 파일을 Adobe Reader 대신 Chrome으로 열기
+
+
 ### 시작 프로그램 등록
 Windows 시작 시 자동 실행을 원하는 경우:
 1. 설정 창에서 "Windows 시작 시 자동 실행" 체크박스를 선택합니다
