@@ -81,6 +81,9 @@ All requirements from the problem statement are implemented:
 - FileSaved event handlers in MainForm and FileOpenerForm for complete sync feedback
 - Balloon notifications when file save to original completes successfully
 - Pending save task tracking to prevent premature cleanup
+- **ReadyToRun (R2R) compilation** for framework-dependent builds to generate native code
+- **PublishSingleFile** option for framework-dependent builds to create single executable
+- **Embedded debug symbols** for better PE structure in Release builds
 
 ### Changed
 - FileManager now checks custom application settings before falling back to Windows defaults
@@ -89,6 +92,13 @@ All requirements from the problem statement are implemented:
 - Enhanced automatic sync feature to show both start and completion notifications
 - README.md updated to mention system notifications for sync completion
 - Cleanup() now waits for pending save operations to complete before deleting temp files
+- **Build workflow updated** to prominently recommend Standalone build as primary download
+- **Release notes updated** to clearly warn about framework-dependent build false positive detection
+- **SECURITY.md updated** to explain difference between builds and recommend Standalone
+- **WINDOWS_DEFENDER_FIX.md updated** to prioritize Standalone build as easiest solution
+- **FALSE_POSITIVE_MITIGATION_SUMMARY.md updated** to document all Windows Defender mitigation strategies
+- **README.md updated** to add download section recommending Standalone build
+- **QUICKSTART.md updated** to prioritize downloading Standalone release over building from source
 
 ### Fixed
 - Temporary files now open with user-specified applications instead of always using Notepad
@@ -96,6 +106,12 @@ All requirements from the problem statement are implemented:
 - FileSaved event is now properly utilized to notify users when sync completes
 - **Critical fix**: Program no longer terminates prematurely when editor closes, ensuring all changes are saved to original file
 - Save operations are now tracked and awaited before cleanup, preventing data loss
+
+### Security
+- **Windows Defender False Positive Mitigation**: Framework-dependent build optimized with ReadyToRun and SingleFile
+- **Build differentiation**: Standalone build (no false positives) vs framework-dependent build (may trigger false positives)
+- **User guidance**: Clear documentation and warnings about which build to use
+- **Note**: Framework-dependent build may still be detected as `Trojan:Script/Wacatac.B!ml` by Windows Defender due to its small size and dynamic loading characteristics. **Standalone build is strongly recommended** for most users.
 
 ## [Unreleased - Future]
 

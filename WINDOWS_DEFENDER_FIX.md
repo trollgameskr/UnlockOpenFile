@@ -2,7 +2,26 @@
 
 이 파일은 Windows Defender가 UnlockOpenFile을 바이러스로 탐지했을 때의 해결 방법을 단계별로 안내합니다.
 
-## 빠른 해결 방법
+## 🌟 가장 쉬운 해결 방법: Standalone 빌드 사용
+
+**경량 빌드**를 사용 중이라면 **Standalone 빌드**로 전환하세요:
+
+1. [GitHub Releases](https://github.com/trollgameskr/UnlockOpenFile/releases/latest)로 이동
+2. `UnlockOpenFile-vX.X.X-standalone.zip` 다운로드 (경량 빌드 대신)
+3. 압축 해제 후 실행
+
+**Standalone 빌드의 장점:**
+- ✅ Windows Defender 오탐 가능성 매우 낮음
+- ✅ .NET Runtime 설치 불필요
+- ✅ 단일 실행 파일로 간편하게 사용
+- ✅ 별도 설정 없이 바로 실행 가능
+
+**왜 Standalone 빌드는 탐지되지 않나요?**
+- .NET Runtime을 포함하여 완전한 PE 구조를 가짐
+- 더 많은 메타데이터와 네이티브 코드 포함
+- 보안 프로그램의 휴리스틱 분석에서 더 신뢰도가 높음
+
+## 경량 빌드를 계속 사용하려는 경우
 
 ### 1단계: 프로그램 폴더를 제외 목록에 추가
 

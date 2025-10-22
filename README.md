@@ -8,6 +8,16 @@
 
 > 🔧 **오탐 해결:** Windows Defender 오탐 해결 방법은 [WINDOWS_DEFENDER_FIX.md](WINDOWS_DEFENDER_FIX.md)를 참조하세요!
 
+## 📥 다운로드
+
+**⭐ 권장: [Standalone 빌드](https://github.com/trollgameskr/UnlockOpenFile/releases/latest)를 사용하세요**
+
+- ✅ Windows Defender 오탐 가능성 낮음
+- ✅ .NET Runtime 설치 불필요
+- ✅ 단일 실행 파일로 간편하게 사용
+
+**고급 사용자용:** 경량 빌드도 제공되지만 Windows Defender가 오탐할 수 있습니다. 자세한 내용은 [SECURITY.md](SECURITY.md)를 참조하세요.
+
 ## 📚 문서 가이드
 
 - **[QUICKSTART.md](QUICKSTART.md)** - 5분 빠른 시작 가이드
@@ -33,6 +43,10 @@
 
 ## 요구 사항
 
+**Standalone 빌드 (권장):**
+- Windows 10 이상
+
+**경량 빌드:**
 - Windows 10 이상
 - .NET 8.0 Runtime
 
@@ -49,11 +63,18 @@ dotnet build -c Release
 ```
 
 배포용 패키지 생성:
+
+**Standalone 빌드 (권장):**
+```bash
+dotnet publish -c Release -r win-x64 --self-contained true -o ./publish-standalone
+```
+
+**경량 빌드:**
 ```bash
 dotnet publish -c Release -r win-x64 --self-contained false -o ./publish
 ```
 
-빌드된 실행 파일은 `publish/UnlockOpenFile.exe`에 생성됩니다.
+빌드된 실행 파일은 각각 `publish-standalone/UnlockOpenFile.exe` 또는 `publish/UnlockOpenFile.exe`에 생성됩니다.
 
 자체 포함형 빌드 (.NET Runtime 포함):
 ```bash

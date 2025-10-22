@@ -2,29 +2,57 @@
 
 빠르게 시작하기 위한 5분 가이드
 
-## 1. 다운로드 및 빌드 (1분)
+## 1. 다운로드 (1분)
 
-### 필요한 것
-- .NET 8.0 SDK (개발용) 또는 Runtime (실행용)
+### 옵션 A: 릴리스 다운로드 (가장 쉬움, 권장)
+
+1. [GitHub Releases](https://github.com/trollgameskr/UnlockOpenFile/releases/latest)로 이동
+2. **`UnlockOpenFile-vX.X.X-standalone.zip`** 다운로드 (⭐ 권장)
+   - ✅ Windows Defender 오탐 가능성 낮음
+   - ✅ .NET Runtime 설치 불필요
+   - ✅ 압축 해제 후 바로 실행
+3. ZIP 압축 해제
+4. `UnlockOpenFile.exe` 실행
+
+### 옵션 B: 소스에서 빌드
+
+#### 필요한 것
+- .NET 8.0 SDK (개발용)
 - Windows 10 이상
 
-### 빌드 방법
+#### 빌드 방법 (Standalone, 권장)
 ```bash
 # 저장소 클론
 git clone https://github.com/trollgameskr/UnlockOpenFile.git
 cd UnlockOpenFile
 
-# 릴리스 빌드
+# Standalone 빌드 (권장)
+dotnet publish -c Release -r win-x64 --self-contained true -o publish-standalone
+
+# 실행 파일 위치: publish-standalone/UnlockOpenFile.exe
+```
+
+#### 경량 빌드 (고급 사용자용)
+```bash
+# .NET 8.0 Runtime 필요
 dotnet publish -c Release -r win-x64 --self-contained false -o publish
 
 # 실행 파일 위치: publish/UnlockOpenFile.exe
+# ⚠️ Windows Defender가 오탐할 수 있음 - SECURITY.md 참조
 ```
 
 ## 2. 첫 실행 (1분)
 
 ### 설정 창 열기
 ```bash
+# Standalone 빌드를 사용하는 경우
+publish-standalone/UnlockOpenFile.exe
+
+# 또는 경량 빌드를 사용하는 경우
 publish/UnlockOpenFile.exe
+
+# 또는 다운로드한 경우
+UnlockOpenFile.exe
 ```
 
 이렇게 하면 설정 창이 열립니다.
@@ -45,6 +73,10 @@ publish/UnlockOpenFile.exe
 
 ### 방법 2: 명령줄에서
 ```bash
+# Standalone 빌드를 사용하는 경우
+publish-standalone/UnlockOpenFile.exe "C:\경로\파일.xlsx"
+
+# 또는 경량 빌드를 사용하는 경우
 publish/UnlockOpenFile.exe "C:\경로\파일.xlsx"
 ```
 
@@ -94,7 +126,12 @@ print(df.head())
 - 파일명에 특수문자가 없는지 확인
 
 ### ".NET 8.0이 필요합니다"
-- [.NET 8.0 Runtime 다운로드](https://dotnet.microsoft.com/download/dotnet/8.0)
+- **해결 방법 1 (권장)**: Standalone 빌드 사용 (.NET Runtime 불필요)
+- 해결 방법 2: [.NET 8.0 Runtime 다운로드](https://dotnet.microsoft.com/download/dotnet/8.0)
+
+### "Windows Defender가 바이러스로 탐지합니다"
+- **해결 방법 1 (권장)**: Standalone 빌드 사용 (오탐 가능성 낮음)
+- 해결 방법 2: [WINDOWS_DEFENDER_FIX.md](WINDOWS_DEFENDER_FIX.md) 참조
 
 ### "변경사항이 저장되지 않습니다"
 - 원본 파일이 읽기 전용인지 확인
@@ -111,7 +148,7 @@ print(df.head())
 ## 요약
 
 ```
-1. 빌드: dotnet publish
+1. 다운로드: Standalone 빌드 (권장) 또는 소스에서 빌드
 2. 실행: UnlockOpenFile.exe
 3. 설정: 파일 연결 클릭
 4. 사용: 파일 더블클릭
@@ -119,3 +156,5 @@ print(df.head())
 ```
 
 **이제 파일 잠김 문제 없이 자유롭게 파일을 편집하세요! 🚀**
+
+> 💡 **Tip:** Standalone 빌드를 사용하면 Windows Defender 오탐 문제를 피할 수 있습니다!
