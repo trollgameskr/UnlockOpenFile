@@ -61,7 +61,7 @@ jobs:
           3. 자세한 사용법은 [README.md](https://github.com/trollgameskr/UnlockOpenFile/blob/main/README.md)를 참조하세요
         "@
         gh release create ${{ github.ref_name }} `
-          UnlockOpenFile-${{ github.ref_name }}-win-x64.zip `
+          UnlockOpenFile-${{ github.ref_name }}-standalone.zip `
           --title "UnlockOpenFile ${{ github.ref_name }}" `
           --notes "$releaseBody"
       shell: pwsh
