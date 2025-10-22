@@ -197,7 +197,15 @@ namespace UnlockOpenFile
             {
                 string currentExePath = System.Diagnostics.Process.GetCurrentProcess().MainModule?.FileName ?? "";
                 
-                // First, check HKEY_CURRENT_USER for user-specific associations
+                // First, check custom user-configured application
+                string? customApp = ApplicationSettings.GetApplicationPath(extension);
+                if (customApp != null && !customApp.Equals(currentExePath, StringComparison.OrdinalIgnoreCase))
+                {
+                    OnStatusChanged($"사용자 지정 응용 프로그램 사용: {System.IO.Path.GetFileName(customApp)}");
+                    return customApp;
+                }
+                
+                // Second, check HKEY_CURRENT_USER for user-specific associations
                 string? progId = GetProgIdFromRegistry(Registry.CurrentUser, extension);
                 if (progId != null)
                 {
