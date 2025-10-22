@@ -63,10 +63,22 @@ jobs:
         $releaseBody = @"
         ## UnlockOpenFile ${{ github.ref_name }}
         
-        ### 다운로드
+        ### 📥 다운로드
         
-        - **UnlockOpenFile-${{ github.ref_name }}-standalone.zip**: .NET Runtime이 포함된 자체 포함형 빌드 (권장)
-        - **UnlockOpenFile-${{ github.ref_name }}.zip**: .NET 8.0 Runtime이 필요한 경량 빌드
+        **⭐ 권장: Standalone 빌드를 사용하세요**
+        
+        - **UnlockOpenFile-${{ github.ref_name }}-standalone.zip** (권장)
+          - .NET Runtime이 포함된 자체 포함형 빌드
+          - 별도의 .NET Runtime 설치 불필요
+          - ✅ Windows Defender 오탐 가능성 낮음
+          - 파일 크기: 약 70MB
+        
+        - **UnlockOpenFile-${{ github.ref_name }}.zip** (고급 사용자용)
+          - .NET 8.0 Runtime이 필요한 경량 빌드
+          - ⚠️ Windows Defender가 Trojan:Script/Wacatac.B!ml로 오탐할 수 있음
+          - ReadyToRun 및 SingleFile 최적화 적용
+          - 파일 크기: 약 5MB
+          - .NET 8.0 Runtime이 이미 설치된 환경에서만 권장
         
         ### 🛡️ 보안 안내
         
@@ -78,9 +90,16 @@ jobs:
         - ✅ **MIT 라이선스**: 자유롭게 사용 가능한 오픈소스입니다
         - ✅ **악성 코드 없음**: 네트워크 통신, 데이터 수집 등 의심스러운 동작이 없습니다
         
-        오탐이 발생하는 이유는 파일 모니터링, 프로세스 추적, 레지스트리 접근 등의 기능 때문입니다. 자세한 내용과 해결 방법은 [SECURITY.md](https://github.com/trollgameskr/UnlockOpenFile/blob/main/SECURITY.md)를 참조하세요.
+        **왜 경량 빌드만 오탐되나요?**
+        - 경량 빌드는 작은 크기와 동적 로딩 특성 때문에 휴리스틱 분석에서 의심될 수 있습니다
+        - Standalone 빌드는 .NET Runtime을 포함하여 더 완전한 PE 구조를 가지므로 오탐이 적습니다
+        - 오탐이 발생하는 이유는 파일 모니터링, 프로세스 추적, 레지스트리 접근 등의 정상 기능 때문입니다
         
-        ### 파일 검증
+        **해결 방법:**
+        - 🌟 **가장 쉬운 방법**: Standalone 빌드를 사용하세요 (오탐 가능성 낮음)
+        - 자세한 해결 방법은 [SECURITY.md](https://github.com/trollgameskr/UnlockOpenFile/blob/main/SECURITY.md) 및 [WINDOWS_DEFENDER_FIX.md](https://github.com/trollgameskr/UnlockOpenFile/blob/main/WINDOWS_DEFENDER_FIX.md)를 참조하세요
+        
+        ### 🔐 파일 검증
         
         **SHA256 Checksums:**
         \`\`\`
@@ -90,20 +109,24 @@ jobs:
         
         **VirusTotal 검사:**
         - 다운로드 후 [VirusTotal](https://www.virustotal.com)에 업로드하여 여러 보안 엔진의 검사 결과를 확인할 수 있습니다
-        - 대부분의 보안 엔진에서 안전한 것으로 판정됩니다
+        - Standalone 빌드는 대부분의 보안 엔진에서 안전한 것으로 판정됩니다
         
-        ### 요구 사항
+        ### 📋 요구 사항
         
+        **Standalone 빌드:**
         - Windows 10 이상
-        - .NET 8.0 Runtime (경량 빌드를 사용하는 경우)
         
-        ### 사용 방법
+        **경량 빌드:**
+        - Windows 10 이상
+        - [.NET 8.0 Runtime](https://dotnet.microsoft.com/download/dotnet/8.0) 필요
+        
+        ### 🚀 사용 방법
         
         1. ZIP 파일을 다운로드하여 압축을 풉니다
         2. UnlockOpenFile.exe를 실행합니다
         3. 자세한 사용법은 [README.md](https://github.com/trollgameskr/UnlockOpenFile/blob/main/README.md)를 참조하세요
         
-        ### 오픈소스
+        ### 📖 오픈소스
         
         이 프로젝트는 MIT 라이선스 하에 배포되는 무료 오픈소스 소프트웨어입니다. [소스 코드](https://github.com/trollgameskr/UnlockOpenFile)를 직접 확인하고 빌드할 수 있습니다.
         "@

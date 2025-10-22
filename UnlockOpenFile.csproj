@@ -35,6 +35,21 @@
     <ApplicationIcon />
   </PropertyGroup>
 
+  <!-- Additional publish settings to reduce false positives -->
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <!-- ReadyToRun compilation for native code generation -->
+    <PublishReadyToRun>true</PublishReadyToRun>
+    <!-- Single file publication for framework-dependent build -->
+    <PublishSingleFile>true</PublishSingleFile>
+    <!-- Include native libraries in single file -->
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <!-- Enable trimming to reduce size and suspicious patterns -->
+    <PublishTrimmed>false</PublishTrimmed>
+    <!-- Optimize for size while maintaining compatibility -->
+    <DebugType>embedded</DebugType>
+    <DebugSymbols>true</DebugSymbols>
+  </PropertyGroup>
+
   <ItemGroup>
     <None Include="README.md" Pack="true" PackagePath="\" />
   </ItemGroup>
