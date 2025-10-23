@@ -13,6 +13,7 @@ namespace UnlockOpenFile
         private Button _unregisterButton = null!;
         private Button _closeButton = null!;
         private Button _resetAllButton = null!;
+        private Button _clearRecentFilesButton = null!;
         private TextBox _logTextBox = null!;
         private GroupBox _fileAssociationGroup = null!;
         private GroupBox _startupGroup = null!;
@@ -70,10 +71,20 @@ namespace UnlockOpenFile
             {
                 Text = "이 옵션을 선택하면 Windows 시작 시 프로그램이 백그라운드에서 실행됩니다.",
                 Location = new Point(20, 60),
-                Size = new Size(600, 40),
+                Size = new Size(400, 40),
                 ForeColor = Color.Gray
             };
             _startupGroup.Controls.Add(startupLabel);
+
+            _clearRecentFilesButton = new Button
+            {
+                Text = "최근 파일 목록 지우기",
+                Location = new Point(450, 55),
+                Width = 180,
+                Height = 30
+            };
+            _clearRecentFilesButton.Click += OnClearRecentFilesClick;
+            _startupGroup.Controls.Add(_clearRecentFilesButton);
 
             // File association group
             _fileAssociationGroup = new GroupBox
@@ -520,7 +531,8 @@ namespace UnlockOpenFile
                 "모든 설정을 초기화하시겠습니까?\n\n다음 설정이 삭제됩니다:\n" +
                 "- 시작 프로그램 등록\n" +
                 "- 파일 연결 (.xlsx, .csv)\n" +
-                "- 사용자 지정 응용 프로그램 설정\n\n" +
+                "- 사용자 지정 응용 프로그램 설정\n" +
+                "- 최근 파일 목록\n\n" +
                 "이 작업은 되돌릴 수 없습니다.",
                 "모든 설정 초기화",
                 MessageBoxButtons.YesNo,
@@ -569,6 +581,9 @@ namespace UnlockOpenFile
                     // Clear all custom application paths
                     ApplicationSettings.ClearAllSettings();
 
+                    // Clear recent files
+                    RecentFilesManager.ClearRecentFiles();
+
                     AddLog("모든 설정이 초기화되었습니다.");
                     MessageBox.Show(
                         "모든 설정이 성공적으로 초기화되었습니다.\n설정 창이 닫힙니다.",
@@ -582,6 +597,35 @@ namespace UnlockOpenFile
                 {
                     AddLog($"설정 초기화 오류: {ex.Message}");
                     MessageBox.Show($"설정 초기화에 실패했습니다: {ex.Message}", "오류",
+                        MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+        }
+
+        private void OnClearRecentFilesClick(object? sender, EventArgs e)
+        {
+            var result = MessageBox.Show(
+                "최근 파일 목록을 모두 지우시겠습니까?",
+                "확인",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Question);
+
+            if (result == DialogResult.Yes)
+            {
+                try
+                {
+                    RecentFilesManager.ClearRecentFiles();
+                    AddLog("최근 파일 목록이 지워졌습니다.");
+                    MessageBox.Show(
+                        "최근 파일 목록이 성공적으로 지워졌습니다.",
+                        "완료",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Information);
+                }
+                catch (Exception ex)
+                {
+                    AddLog($"최근 파일 목록 지우기 오류: {ex.Message}");
+                    MessageBox.Show($"최근 파일 목록 지우기에 실패했습니다: {ex.Message}", "오류",
                         MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
