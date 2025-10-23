@@ -71,7 +71,7 @@ namespace UnlockOpenFile
             {
                 Text = "이 옵션을 선택하면 Windows 시작 시 프로그램이 백그라운드에서 실행됩니다.",
                 Location = new Point(20, 60),
-                Size = new Size(400, 40),
+                Size = new Size(600, 20),
                 ForeColor = Color.Gray
             };
             _startupGroup.Controls.Add(startupLabel);
@@ -79,9 +79,9 @@ namespace UnlockOpenFile
             _clearRecentFilesButton = new Button
             {
                 Text = "최근 파일 목록 지우기",
-                Location = new Point(450, 55),
+                Location = new Point(20, 85),
                 Width = 180,
-                Height = 30
+                Height = 25
             };
             _clearRecentFilesButton.Click += OnClearRecentFilesClick;
             _startupGroup.Controls.Add(_clearRecentFilesButton);
