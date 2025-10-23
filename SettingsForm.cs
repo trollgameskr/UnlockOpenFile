@@ -288,6 +288,28 @@ namespace UnlockOpenFile
                 var exePath = Application.ExecutablePath;
                 var progId = $"UnlockOpenFile{extension}";
 
+                // Save the original association before overwriting
+                string? originalProgId = null;
+                try
+                {
+                    using var extKey = Registry.CurrentUser.OpenSubKey($@"Software\Classes\{extension}");
+                    if (extKey != null)
+                    {
+                        originalProgId = extKey.GetValue("")?.ToString();
+                        // Only save if it's not already our ProgId and not empty
+                        if (!string.IsNullOrEmpty(originalProgId) && 
+                            !originalProgId.StartsWith("UnlockOpenFile"))
+                        {
+                            ApplicationSettings.SaveOriginalAssociation(extension, originalProgId);
+                            AddLog($"{extension} 파일의 이전 연결 정보 저장됨: {originalProgId}");
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    AddLog($"이전 연결 정보 저장 오류: {ex.Message}");
+                }
+
                 // Register file association in HKEY_CURRENT_USER (doesn't require admin)
                 using (var extKey = Registry.CurrentUser.CreateSubKey($@"Software\Classes\{extension}"))
                 {
@@ -329,12 +351,35 @@ namespace UnlockOpenFile
                 {
                     try
                     {
-                        Registry.CurrentUser.DeleteSubKeyTree($@"Software\Classes\{ext}", false);
+                        // Check if there's an original association to restore
+                        string? originalProgId = ApplicationSettings.GetOriginalAssociation(ext);
+                        
+                        if (!string.IsNullOrEmpty(originalProgId))
+                        {
+                            // Restore the original association
+                            using (var extKey = Registry.CurrentUser.CreateSubKey($@"Software\Classes\{ext}"))
+                            {
+                                extKey.SetValue("", originalProgId);
+                            }
+                            AddLog($"{ext} 파일의 이전 연결 복원됨: {originalProgId}");
+                            
+                            // Remove the saved original association
+                            ApplicationSettings.RemoveOriginalAssociation(ext);
+                        }
+                        else
+                        {
+                            // No original association saved, just delete the current one
+                            Registry.CurrentUser.DeleteSubKeyTree($@"Software\Classes\{ext}", false);
+                            AddLog($"{ext} 파일 연결이 제거되었습니다.");
+                        }
+                        
+                        // Clean up our ProgId
                         Registry.CurrentUser.DeleteSubKeyTree($@"Software\Classes\UnlockOpenFile{ext}", false);
                     }
                     catch { }
                 }
-                AddLog("파일 연결이 해제되었습니다.");
+                AddLog("파일 연결 해제 완료.");
+                AddLog("변경 사항을 적용하려면 탐색기를 새로 고치거나 로그아웃 후 다시 로그인하세요.");
             }
             catch (Exception ex)
             {
@@ -498,7 +543,20 @@ namespace UnlockOpenFile
                     {
                         try
                         {
-                            Registry.CurrentUser.DeleteSubKeyTree($@"Software\Classes\{ext}", false);
+                            // Restore original associations if they exist
+                            string? originalProgId = ApplicationSettings.GetOriginalAssociation(ext);
+                            if (!string.IsNullOrEmpty(originalProgId))
+                            {
+                                using (var extKey = Registry.CurrentUser.CreateSubKey($@"Software\Classes\{ext}"))
+                                {
+                                    extKey.SetValue("", originalProgId);
+                                }
+                            }
+                            else
+                            {
+                                Registry.CurrentUser.DeleteSubKeyTree($@"Software\Classes\{ext}", false);
+                            }
+                            
                             Registry.CurrentUser.DeleteSubKeyTree($@"Software\Classes\UnlockOpenFile{ext}", false);
                         }
                         catch { }
