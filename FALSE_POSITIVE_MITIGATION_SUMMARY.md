@@ -204,6 +204,9 @@ Windows Defender는 실행 파일의 메타데이터를 분석하여 신뢰도�
 2. ✅ **상세한 메타데이터**: 이미 적용됨
 3. ✅ **문서화**: 이미 적용됨
 4. ✅ **체크섬 제공**: 이미 적용됨
+5. ✅ **빌드 재현성 개선**: NEW - PathMap, EmbedUntrackedSources 적용
+6. ✅ **SBOM 생성**: NEW - 소프트웨어 구성 요소 명세서
+7. ✅ **BUILD_INFO.txt**: NEW - 각 빌드에 검증 정보 포함
 
 ### 중기 (커뮤니티 참여 필요)
 
@@ -216,17 +219,18 @@ Windows Defender는 실행 파일의 메타데이터를 분석하여 신뢰도�
    - 릴리스 노트에 VirusTotal 링크 자동 포함
    - (VirusTotal API 키 필요)
 
-### 장기 (비용 발생)
+### 장기 (비용 발생 또는 무료 옵션)
 
-1. **코드 서명 인증서 구매**
-   - EV (Extended Validation) 코드 서명 인증서 구매
-   - 연간 비용: 약 $300-$500
+1. **코드 서명 인증서** ⭐ 가장 효과적
+   - **무료 옵션**: SignPath.io (오픈소스 프로젝트용 무료 코드 서명)
+   - **유료 옵션**: EV (Extended Validation) 코드 서명 인증서 구매
+   - 연간 비용: $0 (SignPath.io) 또는 $300-$500 (EV 인증서)
    - 효과: Windows SmartScreen 및 Defender 신뢰도 크게 향상
-   - 단점: 개인 오픈소스 프로젝트에서는 비용 부담
+   - 자세한 내용: [CODE_SIGNING_GUIDE.md](CODE_SIGNING_GUIDE.md) 참조
 
 2. **Azure SignTool 사용**
    - 클라우드 기반 코드 서명
-   - 월 비용: 변동적
+   - 월 비용: $5-10
    - 효과: 코드 서명 인증서와 동일
 
 ## 예상 효과

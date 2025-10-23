@@ -27,6 +27,14 @@
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     
+    <!-- Additional metadata for better PE identification and trust -->
+    <ApplicationManifestPath>app.manifest</ApplicationManifestPath>
+    <Win32Resource></Win32Resource>
+    <NoWin32Manifest>false</NoWin32Manifest>
+    <!-- Add trademark and other identifiable information -->
+    <Trademark>UnlockOpenFile</Trademark>
+    <PackageTags>file-management;windows;excel;csv;file-lock;open-source</PackageTags>
+    
     <!-- Enable deterministic builds for better reproducibility -->
     <Deterministic>true</Deterministic>
     <ContinuousIntegrationBuild Condition="'$(GITHUB_ACTIONS)' == 'true'">true</ContinuousIntegrationBuild>
@@ -48,6 +56,14 @@
     <!-- Optimize for size while maintaining compatibility -->
     <DebugType>embedded</DebugType>
     <DebugSymbols>true</DebugSymbols>
+    
+    <!-- Additional metadata to improve trust signals for Windows Defender -->
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <!-- Ensure consistent builds across environments -->
+    <PathMap>$(MSBuildProjectDirectory)=/_/</PathMap>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <!-- Add more PE metadata -->
+    <IncludeAllContentForSelfExtract>true</IncludeAllContentForSelfExtract>
   </PropertyGroup>
 
   <ItemGroup>

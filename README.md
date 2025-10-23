@@ -24,6 +24,8 @@
 - **[USAGE_GUIDE.md](USAGE_GUIDE.md)** - 상세 사용법과 시나리오
 - **[SECURITY.md](SECURITY.md)** - 보안 및 Windows Defender 오탐 안내
 - **[WINDOWS_DEFENDER_FIX.md](WINDOWS_DEFENDER_FIX.md)** - Windows Defender 오탐 해결 단계별 가이드
+- **[GITHUB_BUILD_IMPROVEMENTS.md](GITHUB_BUILD_IMPROVEMENTS.md)** - GitHub 빌드 바이러스 오탐 개선 사항
+- **[CODE_SIGNING_GUIDE.md](CODE_SIGNING_GUIDE.md)** - 코드 서명 가이드 (근본적 해결 방법)
 - **[ARCHITECTURE.md](ARCHITECTURE.md)** - 기술 아키텍처 문서
 - **[IMPLEMENTATION_SUMMARY.md](IMPLEMENTATION_SUMMARY.md)** - 구현 개요
 - **[CHANGELOG.md](CHANGELOG.md)** - 버전 변경 이력
