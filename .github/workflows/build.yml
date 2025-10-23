@@ -34,10 +34,10 @@ jobs:
       continue-on-error: true
     
     - name: Publish (Self-contained)
-      run: dotnet publish -c Release -r win-x64 --self-contained true -o ./publish-standalone -p:SourceRevisionId=${{ github.sha }}
+      run: dotnet publish -c Release -r win-x64 --self-contained true -o ./publish-standalone -p:SourceRevisionId=${{ github.sha }} -p:PublishReadyToRun=true
     
     - name: Publish (Framework-dependent)
-      run: dotnet publish -c Release -r win-x64 --self-contained false -o ./publish -p:SourceRevisionId=${{ github.sha }}
+      run: dotnet publish -c Release -r win-x64 --self-contained false -o ./publish -p:SourceRevisionId=${{ github.sha }} -p:PublishReadyToRun=false
     
     - name: Create ZIP archives
       run: |
@@ -153,29 +153,24 @@ jobs:
         
         - **UnlockOpenFile-${{ github.ref_name }}.zip** (고급 사용자용)
           - .NET 8.0 Runtime이 필요한 경량 빌드
-          - ⚠️ Windows Defender가 Trojan:Script/Wacatac.B!ml로 오탐할 수 있음
-          - ReadyToRun 및 SingleFile 최적화 적용
-          - 파일 크기: 약 5MB
-          - .NET 8.0 Runtime이 이미 설치된 환경에서만 권장
+          - SingleFile 최적화 적용으로 단일 실행 파일
+          - 파일 크기: 약 200KB
+          - .NET 8.0 Runtime이 이미 설치된 환경에서 권장
         
         ### 🛡️ 보안 안내
         
         **Windows Defender 오탐 (False Positive) 알림:**
         
-        이 프로그램은 완전히 안전한 오픈소스 소프트웨어입니다. Windows Defender가 바이러스로 탐지할 수 있으나, 이는 오탐(False Positive)입니다.
+        이 프로그램은 완전히 안전한 오픈소스 소프트웨어입니다.
         
         - ✅ **소스 코드 공개**: 모든 코드가 GitHub에서 검증 가능합니다
         - ✅ **MIT 라이선스**: 자유롭게 사용 가능한 오픈소스입니다
         - ✅ **악성 코드 없음**: 네트워크 통신, 데이터 수집 등 의심스러운 동작이 없습니다
         
-        **왜 경량 빌드만 오탐되나요?**
-        - 경량 빌드는 작은 크기와 동적 로딩 특성 때문에 휴리스틱 분석에서 의심될 수 있습니다
-        - Standalone 빌드는 .NET Runtime을 포함하여 더 완전한 PE 구조를 가지므로 오탐이 적습니다
-        - 오탐이 발생하는 이유는 파일 모니터링, 프로세스 추적, 레지스트리 접근 등의 정상 기능 때문입니다
-        
-        **해결 방법:**
-        - 🌟 **가장 쉬운 방법**: Standalone 빌드를 사용하세요 (오탐 가능성 낮음)
-        - 자세한 해결 방법은 [SECURITY.md](https://github.com/trollgameskr/UnlockOpenFile/blob/main/SECURITY.md) 및 [WINDOWS_DEFENDER_FIX.md](https://github.com/trollgameskr/UnlockOpenFile/blob/main/WINDOWS_DEFENDER_FIX.md)를 참조하세요
+        **권장 사항:**
+        - 🌟 **Standalone 빌드 사용 권장**: .NET Runtime 설치 불필요, 호환성 문제 없음
+        - Framework-dependent 빌드는 .NET 8.0 Runtime 설치 필요
+        - 자세한 해결 방법은 [SECURITY.md](https://github.com/trollgameskr/UnlockOpenFile/blob/main/SECURITY.md)를 참조하세요
         
         ### 🔐 파일 검증
         

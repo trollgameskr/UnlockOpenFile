@@ -24,6 +24,7 @@
 - **[USAGE_GUIDE.md](USAGE_GUIDE.md)** - 상세 사용법과 시나리오
 - **[SECURITY.md](SECURITY.md)** - 보안 및 Windows Defender 오탐 안내
 - **[WINDOWS_DEFENDER_FIX.md](WINDOWS_DEFENDER_FIX.md)** - Windows Defender 오탐 해결 단계별 가이드
+- **[FRAMEWORK_DEPENDENT_FIX.md](FRAMEWORK_DEPENDENT_FIX.md)** - Framework-dependent 빌드 실행 문제 해결
 - **[GITHUB_BUILD_IMPROVEMENTS.md](GITHUB_BUILD_IMPROVEMENTS.md)** - GitHub 빌드 바이러스 오탐 개선 사항
 - **[CODE_SIGNING_GUIDE.md](CODE_SIGNING_GUIDE.md)** - 코드 서명 가이드 (근본적 해결 방법)
 - **[ARCHITECTURE.md](ARCHITECTURE.md)** - 기술 아키텍처 문서
@@ -157,8 +158,13 @@ UnlockOpenFile.exe
 ## 문제 해결
 
 ### 파일이 열리지 않는 경우
-- .NET 8.0 Runtime이 설치되어 있는지 확인하세요
+- .NET 8.0 Runtime이 설치되어 있는지 확인하세요 (framework-dependent 빌드 사용 시)
+- Standalone 빌드를 사용하면 .NET Runtime 설치 없이 실행 가능합니다
 - 파일 경로에 특수 문자가 있는지 확인하세요
+
+### Framework-dependent 빌드가 실행되지 않는 경우
+- [FRAMEWORK_DEPENDENT_FIX.md](FRAMEWORK_DEPENDENT_FIX.md)를 참조하세요
+- 가장 쉬운 해결 방법: Standalone 빌드를 사용하세요
 
 ### 파일 연결이 작동하지 않는 경우
 - 탐색기를 새로 고치거나 로그아웃 후 다시 로그인하세요
