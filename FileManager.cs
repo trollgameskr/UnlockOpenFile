@@ -502,7 +502,7 @@ namespace UnlockOpenFile
             {
                 case ".xlsx":
                 case ".xls":
-                    // Try to find Excel
+                    // Try to find Excel, then LibreOffice Calc
                     var excelPaths = new[]
                     {
                         @"C:\Program Files\Microsoft Office\root\Office16\EXCEL.EXE",
@@ -515,14 +515,28 @@ namespace UnlockOpenFile
                         if (File.Exists(path))
                             return path;
                     }
+                    
+                    // Try LibreOffice Calc as fallback
+                    var calcPaths = new[]
+                    {
+                        @"C:\Program Files\LibreOffice\program\scalc.exe",
+                        @"C:\Program Files (x86)\LibreOffice\program\scalc.exe"
+                    };
+                    foreach (var path in calcPaths)
+                    {
+                        if (File.Exists(path))
+                            return path;
+                    }
                     break;
                     
                 case ".csv":
-                    // For CSV, prefer Excel if available, otherwise use notepad
+                    // For CSV, prefer Excel if available, then LibreOffice Calc, otherwise use notepad
                     var csvApps = new[]
                     {
                         @"C:\Program Files\Microsoft Office\root\Office16\EXCEL.EXE",
                         @"C:\Program Files (x86)\Microsoft Office\root\Office16\EXCEL.EXE",
+                        @"C:\Program Files\LibreOffice\program\scalc.exe",
+                        @"C:\Program Files (x86)\LibreOffice\program\scalc.exe",
                         @"C:\Windows\System32\notepad.exe"
                     };
                     foreach (var path in csvApps)
