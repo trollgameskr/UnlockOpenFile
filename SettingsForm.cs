@@ -332,7 +332,9 @@ namespace UnlockOpenFile
                 }
 
                 AddLog($"{extension} 파일이 이 프로그램과 연결되었습니다.");
-                AddLog("변경 사항을 적용하려면 탐색기를 새로 고치거나 로그아웃 후 다시 로그인하세요.");
+                
+                // Prompt user to restart Explorer
+                PromptExplorerRestart();
             }
             catch (Exception ex)
             {
@@ -379,7 +381,9 @@ namespace UnlockOpenFile
                     catch { }
                 }
                 AddLog("파일 연결 해제 완료.");
-                AddLog("변경 사항을 적용하려면 탐색기를 새로 고치거나 로그아웃 후 다시 로그인하세요.");
+                
+                // Prompt user to restart Explorer
+                PromptExplorerRestart();
             }
             catch (Exception ex)
             {
@@ -594,6 +598,47 @@ namespace UnlockOpenFile
             _logTextBox.AppendText($"[{DateTime.Now:HH:mm:ss}] {message}\r\n");
             _logTextBox.SelectionStart = _logTextBox.Text.Length;
             _logTextBox.ScrollToCaret();
+        }
+
+        private void PromptExplorerRestart()
+        {
+            var result = MessageBox.Show(
+                "파일 연결 변경 사항을 적용하려면 Windows 탐색기를 재시작해야 합니다.\n\n" +
+                "지금 탐색기를 재시작하시겠습니까?\n\n" +
+                "참고: 탐색기를 재시작하면 열려 있는 탐색기 창이 모두 닫힙니다.",
+                "탐색기 재시작",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Question);
+
+            if (result == DialogResult.Yes)
+            {
+                AddLog("Windows 탐색기를 재시작하는 중...");
+                
+                bool success = ExplorerHelper.RestartExplorer();
+                
+                if (success)
+                {
+                    AddLog("Windows 탐색기가 성공적으로 재시작되었습니다.");
+                    MessageBox.Show(
+                        "Windows 탐색기가 재시작되었습니다.\n파일 연결 변경 사항이 적용되었습니다.",
+                        "완료",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Information);
+                }
+                else
+                {
+                    AddLog("탐색기 재시작 중 오류가 발생했습니다.");
+                    MessageBox.Show(
+                        "탐색기 재시작에 실패했습니다.\n수동으로 로그아웃 후 다시 로그인하거나 PC를 재시작해주세요.",
+                        "오류",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Error);
+                }
+            }
+            else
+            {
+                AddLog("탐색기 재시작을 건너뜁니다. 변경 사항을 적용하려면 나중에 로그아웃 후 다시 로그인하거나 PC를 재시작하세요.");
+            }
         }
     }
 }
