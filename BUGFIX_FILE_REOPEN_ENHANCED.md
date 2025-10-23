@@ -78,12 +78,12 @@ public bool IsFileStillInUse()
     if (!File.Exists(_tempFilePath))
         return false;
     
-    // Layer 2: Wait for pending save operations
+    // Layer 2: Wait for pending save operations (max 2 seconds)
     if (_pendingSaveTask != null && !_pendingSaveTask.IsCompleted)
     {
         try
         {
-            _pendingSaveTask.Wait(TimeSpan.FromSeconds(3));
+            _pendingSaveTask.Wait(TimeSpan.FromSeconds(2));
         }
         catch
         {
@@ -91,7 +91,7 @@ public bool IsFileStillInUse()
         }
     }
     
-    // Layer 3: Retry lock check with delays
+    // Layer 3: Retry lock check with delays (3 retries × 300ms = 600ms max)
     for (int i = 0; i < 3; i++)
     {
         if (!IsFileLocked(_tempFilePath))
@@ -114,7 +114,7 @@ public bool IsFileStillInUse()
         
         if (i < 2)
         {
-            System.Threading.Thread.Sleep(500);
+            System.Threading.Thread.Sleep(300);  // Optimized from 500ms
         }
     }
     
@@ -126,15 +126,18 @@ public bool IsFileStillInUse()
 
 #### 1. Wait for Pending Save Tasks (Layer 2)
 **Problem:** Our own save operation might have the file open for reading.
-**Solution:** Wait up to 3 seconds for any pending save to complete before checking lock.
+**Solution:** Wait up to 2 seconds for any pending save to complete before checking lock.
+**Optimization:** Most saves complete in < 1 second, so 2 seconds is a generous timeout.
 
 #### 2. Retry Lock Check (Layer 3)
 **Problem:** Application might hold transient locks during cleanup.
-**Solution:** Retry lock check 3 times with 500ms delays (total 1 second).
+**Solution:** Retry lock check 3 times with 300ms delays (total 600ms retry window).
+**Optimization:** 300ms is sufficient for most applications to release transient locks.
 
 #### 3. Recent Modification Check (Layer 4)
 **Problem:** File might be in the middle of being saved when check occurs.
 **Solution:** If file is not locked but was modified within last 2 seconds, consider it potentially still in use.
+**Rationale:** 2-second window provides safety margin for save operations to complete.
 
 ## Test Scenarios
 
@@ -204,15 +207,23 @@ public bool IsFileStillInUse()
 
 ### Performance Considerations
 
-1. **Slight Delay on Reopen**
-   - Maximum 3-second wait for save operations
-   - Maximum 1-second retry delay for lock checks
-   - Total worst case: ~4 seconds (acceptable for edge cases)
+1. **Slight Delay on Reopen (Optimized)**
+   - Maximum 2-second wait for save operations (down from 3 seconds)
+   - Maximum 600ms retry delay for lock checks (down from 1 second)
+   - Total worst case: ~2.6 seconds (acceptable for edge cases)
+   - **Optimization rationale:** Most saves complete in < 1 second, and transient locks typically release within 300ms
 
 2. **Normal Case Performance**
-   - If file not locked: Returns immediately (< 100ms)
+   - If file not locked and not recently modified: Returns immediately (< 100ms)
    - If save completed: No wait needed
-   - Most cases: < 500ms response time
+   - If transient lock: 1-2 retries, ~300-600ms
+   - **Most common case: < 100ms response time**
+
+3. **UI Thread Impact**
+   - Check is synchronous and runs on UI thread
+   - Normal case: No noticeable delay
+   - Worst case: 2.6 seconds (rare, only when save is slow or file genuinely in use)
+   - Acceptable trade-off for accuracy and reliability
 
 ### Edge Cases Handled
 
