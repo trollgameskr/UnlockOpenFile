@@ -87,7 +87,7 @@ namespace UnlockOpenFile
                         using var reader = new StreamReader(server, Encoding.UTF8);
                         var message = reader.ReadToEnd();
 
-                        if (_mainForm != null && !string.IsNullOrEmpty(message))
+                        if (_mainForm != null && !_mainForm.IsDisposed && !string.IsNullOrEmpty(message))
                         {
                             if (message.StartsWith("FILE:"))
                             {
