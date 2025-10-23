@@ -4,29 +4,21 @@
 
 > 💡 **빠른 시작:** 5분 안에 시작하려면 [QUICKSTART.md](QUICKSTART.md)를 참조하세요!
 
-> 🛡️ **보안 안내:** Windows Defender 오탐 관련 안내는 [SECURITY.md](SECURITY.md)를 참조하세요!
-
-> 🔧 **오탐 해결:** Windows Defender 오탐 해결 방법은 [WINDOWS_DEFENDER_FIX.md](WINDOWS_DEFENDER_FIX.md)를 참조하세요!
-
 ## 📥 다운로드
 
 **⭐ 권장: [Standalone 빌드](https://github.com/trollgameskr/UnlockOpenFile/releases/latest)를 사용하세요**
 
-- ✅ Windows Defender 오탐 가능성 낮음
 - ✅ .NET Runtime 설치 불필요
 - ✅ 단일 실행 파일로 간편하게 사용
 
-**고급 사용자용:** 경량 빌드도 제공되지만 Windows Defender가 오탐할 수 있습니다. 자세한 내용은 [SECURITY.md](SECURITY.md)를 참조하세요.
+**고급 사용자용:** 경량 빌드도 제공됩니다. .NET 8.0 Runtime이 이미 설치된 환경에서 사용하세요.
 
 ## 📚 문서 가이드
 
 - **[QUICKSTART.md](QUICKSTART.md)** - 5분 빠른 시작 가이드
 - **[USAGE_GUIDE.md](USAGE_GUIDE.md)** - 상세 사용법과 시나리오
-- **[SECURITY.md](SECURITY.md)** - 보안 및 Windows Defender 오탐 안내
-- **[WINDOWS_DEFENDER_FIX.md](WINDOWS_DEFENDER_FIX.md)** - Windows Defender 오탐 해결 단계별 가이드
 - **[FRAMEWORK_DEPENDENT_FIX.md](FRAMEWORK_DEPENDENT_FIX.md)** - Framework-dependent 빌드 실행 문제 해결
-- **[GITHUB_BUILD_IMPROVEMENTS.md](GITHUB_BUILD_IMPROVEMENTS.md)** - GitHub 빌드 바이러스 오탐 개선 사항
-- **[CODE_SIGNING_GUIDE.md](CODE_SIGNING_GUIDE.md)** - 코드 서명 가이드 (근본적 해결 방법)
+- **[CODE_SIGNING_GUIDE.md](CODE_SIGNING_GUIDE.md)** - 코드 서명 가이드
 - **[ARCHITECTURE.md](ARCHITECTURE.md)** - 기술 아키텍처 문서
 - **[IMPLEMENTATION_SUMMARY.md](IMPLEMENTATION_SUMMARY.md)** - 구현 개요
 - **[CHANGELOG.md](CHANGELOG.md)** - 버전 변경 이력

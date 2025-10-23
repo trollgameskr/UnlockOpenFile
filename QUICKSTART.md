@@ -8,7 +8,6 @@
 
 1. [GitHub Releases](https://github.com/trollgameskr/UnlockOpenFile/releases/latest)로 이동
 2. **`UnlockOpenFile-vX.X.X-standalone.zip`** 다운로드 (⭐ 권장)
-   - ✅ Windows Defender 오탐 가능성 낮음
    - ✅ .NET Runtime 설치 불필요
    - ✅ 압축 해제 후 바로 실행
 3. ZIP 압축 해제
@@ -38,7 +37,6 @@ dotnet publish -c Release -r win-x64 --self-contained true -o publish-standalone
 dotnet publish -c Release -r win-x64 --self-contained false -o publish
 
 # 실행 파일 위치: publish/UnlockOpenFile.exe
-# ⚠️ Windows Defender가 오탐할 수 있음 - SECURITY.md 참조
 ```
 
 ## 2. 첫 실행 (1분)
@@ -129,10 +127,6 @@ print(df.head())
 - **해결 방법 1 (권장)**: Standalone 빌드 사용 (.NET Runtime 불필요)
 - 해결 방법 2: [.NET 8.0 Runtime 다운로드](https://dotnet.microsoft.com/download/dotnet/8.0)
 
-### "Windows Defender가 바이러스로 탐지합니다"
-- **해결 방법 1 (권장)**: Standalone 빌드 사용 (오탐 가능성 낮음)
-- 해결 방법 2: [WINDOWS_DEFENDER_FIX.md](WINDOWS_DEFENDER_FIX.md) 참조
-
 ### "변경사항이 저장되지 않습니다"
 - 원본 파일이 읽기 전용인지 확인
 - 상태 창의 로그 확인
@@ -156,5 +150,3 @@ print(df.head())
 ```
 
 **이제 파일 잠김 문제 없이 자유롭게 파일을 편집하세요! 🚀**
-
-> 💡 **Tip:** Standalone 빌드를 사용하면 Windows Defender 오탐 문제를 피할 수 있습니다!

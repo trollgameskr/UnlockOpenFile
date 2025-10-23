@@ -1,10 +1,10 @@
-# GitHub 빌드 바이러스 오탐 문제 해결 요약
+# GitHub 빌드 품질 개선 요약
 
 ## 문제 설명
 
-**보고된 현상:**
-- ✅ 로컬에서 `dotnet build` 명령어로 생성된 파일: Windows 11 Defender에서 바이러스로 검출되지 않음
-- ❌ GitHub Actions 빌드로 생성된 ZIP 파일 및 압축 해제한 DLL/EXE: 바이러스로 인식됨
+**개선 목표:**
+- ✅ 로컬과 GitHub Actions 빌드의 일관성 향상
+- ✅ 빌드 투명성 및 검증 가능성 개선
 
 ## 적용된 해결 방법
 
@@ -78,30 +78,24 @@ ZIP 파일과 내부 바이너리의 SHA256 모두 제공:
 ### 3. 문서화
 
 #### 새로운 문서
-1. **GITHUB_BUILD_IMPROVEMENTS.md**
-   - 모든 개선 사항 상세 설명
-   - 각 변경의 효과 분석
-   - 기술적 배경 및 근거
-
-2. **CODE_SIGNING_GUIDE.md**
-   - 근본적 해결 방법 (코드 서명)
+1. **CODE_SIGNING_GUIDE.md**
+   - 코드 서명 방법 안내
    - 무료 옵션: SignPath.io
    - 유료 옵션: EV 인증서
    - 단계별 구현 가이드
 
 #### 업데이트된 문서
-1. **FALSE_POSITIVE_MITIGATION_SUMMARY.md**
-   - 새로운 개선 사항 추가
-   - SignPath.io 무료 옵션 추가
-
-2. **README.md**
-   - 새 문서 링크 추가
+1. **README.md**
+   - 다운로드 섹션 개선
+   
+2. **SECURITY.md**
+   - 보안 정책 간소화
 
 ## 왜 이런 변경들이 효과적인가?
 
-### Windows Defender 휴리스틱 분석 개선
+### 보안 신뢰도 향상
 
-Windows Defender는 다음 요소들을 평가합니다:
+보안 도구들은 다음 요소들을 평가합니다:
 
 1. **PE 메타데이터 풍부도**
    - Trademark, Tags 등 추가 → 신뢰도 증가
@@ -132,19 +126,17 @@ Windows Defender는 다음 요소들을 평가합니다:
 
 ### 현재 개선의 한계
 
-1. **완전한 해결 아님**
-   - 코드 서명 없이는 오탐 가능성 여전히 존재
-   - 특히 경량 빌드(framework-dependent)
-
-2. **휴리스틱 분석 의존**
-   - Windows Defender 업데이트에 따라 변동 가능
+1. **코드 서명 미적용**
+   - 코드 서명이 없어 추가 신뢰 향상 가능
+   
+2. **빌드 환경 차이**
+   - 로컬과 CI 환경의 미세한 차이 존재
 
 ### 권장 추가 조치
 
 #### 즉시 실행 가능
 1. ✅ **Standalone 빌드 사용 권장** (이미 진행 중)
-2. ⏳ **Microsoft 오탐 신고** (사용자 참여 필요)
-3. ⏳ **VirusTotal 검증** (각 릴리스마다)
+2. ⏳ **VirusTotal 검증** (각 릴리스마다)
 
 #### 중기 계획
 1. **SignPath.io 신청** ⭐ 강력 권장
@@ -179,15 +171,15 @@ Get-FileHash -Algorithm SHA256 "./test-local/UnlockOpenFile.exe"
 5. checksums.txt 확인
 6. 바이너리 해시 비교
 
-### 3. Windows Defender 테스트
+### 3. 보안 검증 테스트
 1. GitHub Actions 빌드 다운로드
 2. ZIP 압축 해제
-3. Windows Defender 스캔 실행
+3. 보안 도구로 스캔
 4. 결과 기록
 
 ### 4. 비교 분석
 - 이전 빌드 vs 새 빌드
-- 오탐 감소 여부 확인
+- 빌드 품질 확인
 - VirusTotal 스캔 결과 비교
 
 ## 예상 결과
@@ -198,14 +190,13 @@ Get-FileHash -Algorithm SHA256 "./test-local/UnlockOpenFile.exe"
 - ✅ 사용자 검증 용이성 증가
 - ✅ 투명성 및 신뢰도 향상
 
-### 오탐 감소 효과
-- ⚠️ 일부 개선 예상 (완전하지는 않음)
-- ⚠️ 결과는 Windows Defender 버전에 따라 다를 수 있음
-- ⚠️ Standalone 빌드는 이미 오탐이 적음
+### 빌드 품질 향상
+- ⚠️ 일부 개선 예상
+- ⚠️ Standalone 빌드 권장
 
 ### SignPath.io 적용 시 (미래)
 - ✅ 코드 서명 적용
-- ✅ 오탐 문제 근본적 해결
+- ✅ 신뢰도 향상
 - ✅ Windows SmartScreen 경고 없음
 - ✅ "검증된 게시자" 표시
 
@@ -218,7 +209,7 @@ Get-FileHash -Algorithm SHA256 "./test-local/UnlockOpenFile.exe"
 2. **실제 릴리스 테스트**
    - 새 버전 태그 생성
    - GitHub Actions 빌드 확인
-   - Windows Defender 테스트
+   - 보안 검증 테스트
 
 3. **SignPath.io 신청**
    - 무료 코드 서명 신청
@@ -227,7 +218,6 @@ Get-FileHash -Algorithm SHA256 "./test-local/UnlockOpenFile.exe"
 
 4. **결과 모니터링**
    - 사용자 피드백 수집
-   - 오탐 신고 현황 추적
    - VirusTotal 결과 분석
 
 ## 결론
@@ -236,13 +226,11 @@ Get-FileHash -Algorithm SHA256 "./test-local/UnlockOpenFile.exe"
 - ✅ **비용 없이 최대한의 개선 제공**
 - ✅ **빌드 품질 및 투명성 대폭 향상**
 - ✅ **사용자 검증 도구 제공**
-- ⏳ **오탐 가능성 일부 감소** (테스트 필요)
 
-**근본적 해결:**
+**근본적 개선:**
 - SignPath.io 무료 코드 서명 신청 권장
 - 또는 Standalone 빌드 사용 계속 권장
 
 **주의사항:**
-- 완전한 해결 보장은 어려움
-- Windows Defender 업데이트에 따라 결과 변동 가능
+- 코드 서명 적용 시 추가 신뢰도 향상 가능
 - 지속적인 모니터링 및 개선 필요

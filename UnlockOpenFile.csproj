@@ -9,7 +9,7 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
     
-    <!-- Assembly Information to reduce false positives -->
+    <!-- Assembly Information -->
     <AssemblyName>UnlockOpenFile</AssemblyName>
     <AssemblyTitle>UnlockOpenFile</AssemblyTitle>
     <Product>UnlockOpenFile</Product>
@@ -43,7 +43,7 @@
     <ApplicationIcon />
   </PropertyGroup>
 
-  <!-- Additional publish settings to reduce false positives -->
+  <!-- Additional publish settings for optimized builds -->
   <PropertyGroup Condition="'$(Configuration)' == 'Release'">
     <!-- Single file publication for framework-dependent build -->
     <PublishSingleFile>true</PublishSingleFile>
@@ -55,7 +55,7 @@
     <DebugType>embedded</DebugType>
     <DebugSymbols>true</DebugSymbols>
     
-    <!-- Additional metadata to improve trust signals for Windows Defender -->
+    <!-- Additional metadata to improve build quality -->
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
     <!-- Ensure consistent builds across environments -->
     <PathMap>$(MSBuildProjectDirectory)=/_/</PathMap>
