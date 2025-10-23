@@ -85,5 +85,18 @@ namespace UnlockOpenFile
             }
             return result;
         }
+
+        public static void ClearAllSettings()
+        {
+            try
+            {
+                // Delete the entire registry key and all its values
+                Registry.CurrentUser.DeleteSubKeyTree(@"Software\UnlockOpenFile", false);
+            }
+            catch
+            {
+                // Ignore errors if key doesn't exist
+            }
+        }
     }
 }
