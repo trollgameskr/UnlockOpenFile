@@ -36,6 +36,15 @@ namespace UnlockOpenFile
                 $"{Path.GetFileNameWithoutExtension(originalFilePath)}_copy_{DateTime.Now.Ticks}{Path.GetExtension(originalFilePath)}");
         }
 
+        public bool IsFileStillInUse()
+        {
+            // Check if temp file exists and is locked
+            if (!File.Exists(_tempFilePath))
+                return false;
+                
+            return IsFileLocked(_tempFilePath);
+        }
+
         public Task<bool> OpenFileAsync()
         {
             try
@@ -238,7 +247,7 @@ namespace UnlockOpenFile
 
         private void StartFileMonitoring()
         {
-            // Check every 5 seconds if the temp file is still being used
+            // Check every 2 seconds if the temp file is still being used
             _fileMonitorTimer = new System.Threading.Timer(async _ =>
             {
                 try
@@ -282,11 +291,11 @@ namespace UnlockOpenFile
                         
                         // File exists but is not locked - check if it hasn't been modified for a while
                         var timeSinceLastModify = DateTime.Now - _lastModified;
-                        if (timeSinceLastModify.TotalMinutes > 5)
+                        if (timeSinceLastModify.TotalSeconds > 10)
                         {
-                            // File hasn't been modified in 5 minutes and isn't locked
+                            // File hasn't been modified in 10 seconds and isn't locked
                             // User probably closed the editor
-                            OnStatusChanged("파일이 5분 이상 수정되지 않았습니다. 파일을 닫습니다.");
+                            OnStatusChanged("파일이 10초 이상 수정되지 않았고 잠금이 해제되었습니다. 파일을 닫습니다.");
                             StopFileMonitoring();
                             
                             // Final save if modified
@@ -304,7 +313,7 @@ namespace UnlockOpenFile
                 {
                     OnStatusChanged($"파일 모니터링 오류: {ex.Message}");
                 }
-            }, null, TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5));
+            }, null, TimeSpan.FromSeconds(2), TimeSpan.FromSeconds(2));
         }
 
         private void StopFileMonitoring()

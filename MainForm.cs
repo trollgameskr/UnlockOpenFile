@@ -152,9 +152,26 @@ namespace UnlockOpenFile
             {
                 if (_fileManagers.ContainsKey(filePath))
                 {
-                    AddLog($"파일이 이미 열려 있습니다: {filePath}");
-                    UpdateFileStatus(filePath, "이미 열림");
-                    return;
+                    // Check if the file is actually still in use
+                    var existingManager = _fileManagers[filePath];
+                    if (!existingManager.IsFileStillInUse())
+                    {
+                        // File is no longer in use, clean it up and allow reopening
+                        AddLog($"기존 파일이 더 이상 사용 중이 아닙니다. 정리 중...: {filePath}");
+                        RemoveFile(filePath);
+                        // Continue to open the file below
+                    }
+                    else
+                    {
+                        AddLog($"파일이 이미 열려 있습니다: {filePath}");
+                        UpdateFileStatus(filePath, "이미 열림");
+                        
+                        // Show and bring the main form to front
+                        this.Show();
+                        this.WindowState = FormWindowState.Normal;
+                        this.BringToFront();
+                        return;
+                    }
                 }
 
                 var fileManager = new FileManager(filePath);
