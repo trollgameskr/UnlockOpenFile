@@ -2,20 +2,19 @@
 
 ## 개요
 
-코드 서명은 Windows Defender 및 SmartScreen 오탐 문제를 **근본적으로 해결**하는 가장 효과적인 방법입니다.
+코드 서명은 소프트웨어의 신뢰성을 향상시키고 사용자에게 안전성을 보장하는 전문적인 방법입니다.
 
 ## 왜 코드 서명이 필요한가?
 
 ### 현재 상황
-- ❌ 서명되지 않은 바이너리 = 휴리스틱 분석에서 의심받기 쉬움
-- ❌ Windows SmartScreen 경고
-- ❌ Windows Defender 오탐 가능성
+- ⚠️ 서명되지 않은 바이너리
+- ⚠️ Windows SmartScreen 경고
 
 ### 코드 서명 후
 - ✅ 신뢰할 수 있는 게시자로 인식
 - ✅ SmartScreen 경고 없음
-- ✅ Defender 오탐 가능성 대폭 감소
 - ✅ 사용자 신뢰도 향상
+- ✅ 전문적인 소프트웨어 배포
 
 ## 코드 서명 인증서 옵션
 
@@ -37,7 +36,7 @@
 - **즉시 SmartScreen 신뢰 획득**
 - USB 토큰 또는 HSM에 저장
 - 더 엄격한 신원 검증
-- Windows Defender에서 가장 높은 신뢰도
+- 높은 신뢰도
 
 **권장 제공업체:**
 - DigiCert EV Code Signing
@@ -200,12 +199,10 @@ signtool verify /pa /v ./publish/UnlockOpenFile.exe
 ## 예상 효과
 
 ### 코드 서명 전
-- ⚠️ Windows Defender 오탐 가능 (경량 빌드)
 - ⚠️ SmartScreen 경고
 - ⚠️ "알 수 없는 게시자" 표시
 
 ### 코드 서명 후
-- ✅ Windows Defender 신뢰도 높음
 - ✅ SmartScreen 경고 없음 (EV 인증서)
 - ✅ "검증된 게시자: trollgameskr" 표시
 - ✅ 사용자 신뢰도 대폭 향상
@@ -226,7 +223,7 @@ signtool verify /pa /v ./publish/UnlockOpenFile.exe
 ## 결론
 
 코드 서명은 초기 비용이 있지만:
-- 🎯 오탐 문제를 근본적으로 해결
+- 🎯 전문적인 소프트웨어 배포
 - 🎯 사용자 경험 크게 향상
 - 🎯 프로젝트 전문성 향상
 
