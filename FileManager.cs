@@ -38,11 +38,60 @@ namespace UnlockOpenFile
 
         public bool IsFileStillInUse()
         {
-            // Check if temp file exists and is locked
+            // Check if temp file exists
             if (!File.Exists(_tempFilePath))
                 return false;
+            
+            // If we have a pending save task, wait for it to complete first
+            // This prevents false positives when our own save operation is accessing the file
+            if (_pendingSaveTask != null && !_pendingSaveTask.IsCompleted)
+            {
+                try
+                {
+                    // Wait up to 3 seconds for save to complete
+                    _pendingSaveTask.Wait(TimeSpan.FromSeconds(3));
+                }
+                catch
+                {
+                    // Ignore timeout or other errors
+                }
+            }
+            
+            // Check if file is locked - retry a few times in case of transient locks
+            for (int i = 0; i < 3; i++)
+            {
+                if (!IsFileLocked(_tempFilePath))
+                {
+                    // File is not locked
+                    // Check if it hasn't been modified recently (within last 2 seconds)
+                    // If it was just modified, the editor might still be saving
+                    try
+                    {
+                        var lastWrite = File.GetLastWriteTime(_tempFilePath);
+                        var timeSinceModified = DateTime.Now - lastWrite;
+                        if (timeSinceModified.TotalSeconds > 2)
+                        {
+                            // File hasn't been modified recently and is not locked
+                            // It's safe to consider it not in use
+                            return false;
+                        }
+                    }
+                    catch
+                    {
+                        // If we can't get last write time, assume file is not in use
+                        return false;
+                    }
+                }
                 
-            return IsFileLocked(_tempFilePath);
+                // File is locked or was recently modified, wait a bit and retry
+                if (i < 2)
+                {
+                    System.Threading.Thread.Sleep(500);
+                }
+            }
+            
+            // After retries, file is still locked - consider it in use
+            return true;
         }
 
         public Task<bool> OpenFileAsync()
