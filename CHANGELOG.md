@@ -92,10 +92,7 @@ All requirements from the problem statement are implemented:
 - README.md updated to mention system notifications for sync completion
 - Cleanup() now waits for pending save operations to complete before deleting temp files
 - **Build workflow updated** to prominently recommend Standalone build as primary download
-- **Release notes updated** to clearly warn about framework-dependent build false positive detection
-- **SECURITY.md updated** to explain difference between builds and recommend Standalone
-- **WINDOWS_DEFENDER_FIX.md updated** to prioritize Standalone build as easiest solution
-- **FALSE_POSITIVE_MITIGATION_SUMMARY.md updated** to document all Windows Defender mitigation strategies
+- **SECURITY.md updated** to be simplified and focus on security policy
 - **README.md updated** to add download section recommending Standalone build
 - **QUICKSTART.md updated** to prioritize downloading Standalone release over building from source
 

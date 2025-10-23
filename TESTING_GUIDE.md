@@ -1,8 +1,8 @@
-# 변경 사항 테스트 가이드
+# 빌드 테스트 가이드
 
 ## 개요
 
-이 문서는 GitHub 빌드 바이러스 오탐 개선 사항을 테스트하는 방법을 설명합니다.
+이 문서는 GitHub 빌드 개선 사항을 테스트하는 방법을 설명합니다.
 
 ## 변경 사항 요약
 
@@ -156,33 +156,23 @@ LegalCopyright   : Copyright © 2024 trollgameskr. Licensed under MIT License.
 LegalTrademarks  : UnlockOpenFile
 ```
 
-### 테스트 6: Windows Defender 스캔
+### 테스트 6: 보안 스캔
 
-**목적:** Windows Defender의 반응 확인 (개선 여부 측정)
+**목적:** 빌드 파일의 보안 검증
 
-**Windows에서:**
-```powershell
-# 1. 실시간 보호가 켜져 있는지 확인
-Get-MpComputerStatus
-
-# 2. 빠른 스캔
-Start-MpScan -ScanType QuickScan -ScanPath "C:\path\to\UnlockOpenFile.exe"
-
-# 3. 전체 스캔
-Start-MpScan -ScanType FullScan -ScanPath "C:\path\to\UnlockOpenFile.exe"
-
-# 4. 스캔 결과 확인
-Get-MpThreat
-```
+**단계:**
+1. VirusTotal에서 스캔
+2. 로컬 보안 도구로 검증
+3. 결과 비교
 
 **비교 항목:**
 - 이전 빌드 vs 새 빌드
 - Framework-dependent vs Standalone
-- 오탐 감소 여부
+- 빌드 품질 비교
 
 ### 테스트 7: VirusTotal 스캔
 
-**목적:** 여러 안티바이러스 엔진의 반응 확인
+**목적:** 여러 보안 엔진의 검증 확인
 
 **단계:**
 1. https://www.virustotal.com 방문
@@ -237,11 +227,9 @@ diff hash1.txt hash2.txt
 **목적:** 새 문서가 올바르게 작성되고 연결되어 있는지 확인
 
 **확인 항목:**
-- ✅ GITHUB_BUILD_IMPROVEMENTS.md 존재
 - ✅ CODE_SIGNING_GUIDE.md 존재
 - ✅ SOLUTION_SUMMARY.md 존재
-- ✅ README.md에 새 문서 링크 포함
-- ✅ FALSE_POSITIVE_MITIGATION_SUMMARY.md 업데이트
+- ✅ README.md에 문서 링크 포함
 
 ## 성공 기준
 
@@ -253,14 +241,12 @@ diff hash1.txt hash2.txt
 - ✅ 메타데이터 포함 확인
 
 ### 권장 (Should Have)
-- ⚠️ Windows Defender 오탐 감소
-- ⚠️ VirusTotal 탐지율 감소
+- ⚠️ 빌드 품질 향상
 - ⚠️ 빌드 재현성 향상
 
 ### 선택 (Nice to Have)
 - 🎯 완전한 빌드 재현성
-- 🎯 VirusTotal 0 탐지
-- 🎯 Windows Defender 완전 통과
+- 🎯 코드 서명 적용
 
 ## 테스트 결과 보고
 
@@ -272,7 +258,6 @@ diff hash1.txt hash2.txt
 ### 환경
 - Windows 버전:
 - .NET SDK 버전:
-- Windows Defender 버전:
 
 ### 빌드 테스트
 - [ ] 로컬 빌드 성공
@@ -280,12 +265,7 @@ diff hash1.txt hash2.txt
 - [ ] BUILD_INFO.txt 생성 확인
 - [ ] SHA256 해시 일치 확인
 
-### Windows Defender
-- 이전 빌드 결과:
-- 새 빌드 결과:
-- 개선 여부:
-
-### VirusTotal
+### 보안 검증
 - 탐지 엔진 수: X / 70
 - 주요 탐지 내용:
 - 이전 대비 변화:
@@ -303,12 +283,10 @@ continue-on-error: true로 설정되어 있어 빌드는 계속됩니다.
 필요시 제거 가능합니다.
 ```
 
-### Windows Defender 계속 탐지
+### 빌드 문제
 ```
 1. Standalone 빌드 사용
-2. Windows Defender 제외 설정
-3. Microsoft 오탐 신고
-4. SignPath.io 코드 서명 신청
+2. SignPath.io 코드 서명 신청
 ```
 
 ### 빌드 재현성 문제
