@@ -45,8 +45,6 @@
 
   <!-- Additional publish settings to reduce false positives -->
   <PropertyGroup Condition="'$(Configuration)' == 'Release'">
-    <!-- ReadyToRun compilation for native code generation -->
-    <PublishReadyToRun>true</PublishReadyToRun>
     <!-- Single file publication for framework-dependent build -->
     <PublishSingleFile>true</PublishSingleFile>
     <!-- Include native libraries in single file -->

@@ -81,7 +81,6 @@ All requirements from the problem statement are implemented:
 - FileSaved event handlers in MainForm and FileOpenerForm for complete sync feedback
 - Balloon notifications when file save to original completes successfully
 - Pending save task tracking to prevent premature cleanup
-- **ReadyToRun (R2R) compilation** for framework-dependent builds to generate native code
 - **PublishSingleFile** option for framework-dependent builds to create single executable
 - **Embedded debug symbols** for better PE structure in Release builds
 
@@ -108,10 +107,10 @@ All requirements from the problem statement are implemented:
 - Save operations are now tracked and awaited before cleanup, preventing data loss
 
 ### Security
-- **Windows Defender False Positive Mitigation**: Framework-dependent build optimized with ReadyToRun and SingleFile
-- **Build differentiation**: Standalone build (no false positives) vs framework-dependent build (may trigger false positives)
+- **Framework-dependent build fixed**: Removed ReadyToRun compilation that caused runtime compatibility issues
+- **Build differentiation**: Standalone build (recommended, no runtime required) vs framework-dependent build (requires .NET 8.0 Runtime)
 - **User guidance**: Clear documentation and warnings about which build to use
-- **Note**: Framework-dependent build may still be detected as `Trojan:Script/Wacatac.B!ml` by Windows Defender due to its small size and dynamic loading characteristics. **Standalone build is strongly recommended** for most users.
+- **ReadyToRun**: Now only applied to self-contained builds for better compatibility
 
 ## [Unreleased - Future]
 
