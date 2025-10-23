@@ -13,6 +13,7 @@ namespace UnlockOpenFile
         private const string PipeName = "UnlockOpenFile_IPC_Pipe";
         private static Mutex? _mutex;
         private static MainForm? _mainForm;
+        private static SettingsForm? _settingsForm;
 
         [STAThread]
         static void Main(string[] args)
@@ -48,22 +49,22 @@ namespace UnlockOpenFile
 
             try
             {
+                // Always start IPC server to handle file open requests
+                StartIPCServer();
+
                 // If arguments are provided, open file in main form
                 if (args.Length > 0)
                 {
                     _mainForm = new MainForm();
                     _mainForm.OpenFile(args[0]);
-
-                    // Start IPC server in background
-                    StartIPCServer();
-
                     Application.Run(_mainForm);
                 }
                 else
                 {
                     // Show settings form if no file is specified
-                    // Don't start IPC server in this case
-                    Application.Run(new SettingsForm());
+                    // IPC server is running, so file open requests will be handled
+                    _settingsForm = new SettingsForm();
+                    Application.Run(_settingsForm);
                 }
             }
             finally
@@ -87,26 +88,58 @@ namespace UnlockOpenFile
                         using var reader = new StreamReader(server, Encoding.UTF8);
                         var message = reader.ReadToEnd();
 
-                        if (_mainForm != null && !_mainForm.IsDisposed && !string.IsNullOrEmpty(message))
+                        if (!string.IsNullOrEmpty(message))
                         {
                             if (message.StartsWith("FILE:"))
                             {
                                 var filePath = message.Substring(5);
-                                _mainForm.Invoke(() =>
+                                
+                                // Check if MainForm exists and is not disposed
+                                if (_mainForm != null && !_mainForm.IsDisposed)
                                 {
-                                    _mainForm.OpenFile(filePath);
-                                    _mainForm.Show();
-                                    _mainForm.WindowState = FormWindowState.Normal;
-                                    _mainForm.BringToFront();
-                                });
+                                    // MainForm exists, open file in it
+                                    _mainForm.Invoke(() =>
+                                    {
+                                        _mainForm.OpenFile(filePath);
+                                        _mainForm.Show();
+                                        _mainForm.WindowState = FormWindowState.Normal;
+                                        _mainForm.BringToFront();
+                                    });
+                                }
+                                else if (_settingsForm != null && !_settingsForm.IsDisposed)
+                                {
+                                    // MainForm doesn't exist but SettingsForm is running
+                                    // Create MainForm on the UI thread using SettingsForm's synchronization context
+                                    _settingsForm.Invoke(() =>
+                                    {
+                                        _mainForm = new MainForm();
+                                        _mainForm.OpenFile(filePath);
+                                        _mainForm.Show();
+                                        _mainForm.WindowState = FormWindowState.Normal;
+                                        _mainForm.BringToFront();
+                                    });
+                                }
                             }
                             else if (message == "SHOW_SETTINGS")
                             {
-                                _mainForm.Invoke(() =>
+                                if (_mainForm != null && !_mainForm.IsDisposed)
                                 {
-                                    var settingsForm = new SettingsForm();
-                                    settingsForm.ShowDialog();
-                                });
+                                    _mainForm.Invoke(() =>
+                                    {
+                                        var settingsForm = new SettingsForm();
+                                        settingsForm.ShowDialog();
+                                    });
+                                }
+                                else if (_settingsForm != null && !_settingsForm.IsDisposed)
+                                {
+                                    // SettingsForm is already shown, just bring it to front
+                                    _settingsForm.Invoke(() =>
+                                    {
+                                        _settingsForm.Show();
+                                        _settingsForm.WindowState = FormWindowState.Normal;
+                                        _settingsForm.BringToFront();
+                                    });
+                                }
                             }
                         }
                     }
