@@ -48,8 +48,9 @@ namespace UnlockOpenFile
             {
                 try
                 {
-                    // Wait up to 3 seconds for save to complete
-                    _pendingSaveTask.Wait(TimeSpan.FromSeconds(3));
+                    // Wait up to 2 seconds for save to complete
+                    // Most saves complete in < 1 second, so this is generous
+                    _pendingSaveTask.Wait(TimeSpan.FromSeconds(2));
                 }
                 catch
                 {
@@ -86,7 +87,7 @@ namespace UnlockOpenFile
                 // File is locked or was recently modified, wait a bit and retry
                 if (i < 2)
                 {
-                    System.Threading.Thread.Sleep(500);
+                    System.Threading.Thread.Sleep(300);
                 }
             }
             
