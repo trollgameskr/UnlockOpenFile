@@ -193,8 +193,8 @@ namespace UnlockOpenFile
         {
             try
             {
-                // Debounce multiple change events
-                await Task.Delay(500);
+                // Minimal debounce to avoid multiple rapid-fire events from the same save operation
+                await Task.Delay(50);
                 
                 var currentModified = File.GetLastWriteTime(_tempFilePath);
                 if (currentModified > _lastModified)
@@ -203,7 +203,7 @@ namespace UnlockOpenFile
                     _isModified = true;
                     FileModified?.Invoke(this, EventArgs.Empty);
                     
-                    // Save back to original and track the task
+                    // Save back to original immediately and track the task
                     _pendingSaveTask = SaveToOriginalAsync();
                     await _pendingSaveTask;
                 }
@@ -218,19 +218,16 @@ namespace UnlockOpenFile
         {
             try
             {
-                OnStatusChanged("변경 사항을 원본에 저장 중...");
+                OnStatusChanged("변경 사항을 원본에 즉시 저장 중...");
                 
-                // Wait a bit to ensure file is not locked
-                await Task.Delay(500);
-                
-                // Retry logic for locked files
+                // Retry logic for locked files - start immediately without delay
                 int retries = 5;
                 while (retries > 0)
                 {
                     try
                     {
                         File.Copy(_tempFilePath, _originalFilePath, true);
-                        OnStatusChanged("원본 파일이 업데이트되었습니다.");
+                        OnStatusChanged("원본 파일이 즉시 업데이트되었습니다.");
                         FileSaved?.Invoke(this, EventArgs.Empty);
                         break;
                     }
@@ -238,7 +235,8 @@ namespace UnlockOpenFile
                     {
                         retries--;
                         if (retries == 0) throw;
-                        await Task.Delay(1000);
+                        // Only wait if we need to retry due to a lock
+                        await Task.Delay(200);
                     }
                 }
             }
