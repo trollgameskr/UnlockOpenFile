@@ -90,6 +90,7 @@ All requirements from the problem statement are implemented:
 - **File Group Rename**: Rename existing file groups through UI button or double-click
 - **Add from Recent Files**: Add files to groups from recent files list with checkbox selection
 - IsFileInListView() helper method for duplicate file checking
+- **Polling Timer**: 1-second polling timer as backup mechanism for file change detection when FileSystemWatcher fails
 
 ### Changed
 - FileManager now checks custom application settings before falling back to Windows defaults
@@ -113,6 +114,7 @@ All requirements from the problem statement are implemented:
 - **Critical fix**: Program no longer terminates prematurely when editor closes, ensuring all changes are saved to original file
 - Save operations are now tracked and awaited before cleanup, preventing data loss
 - Duplicate files are now prevented when adding to file groups
+- **File synchronization reliability**: Added polling timer to ensure changes are always detected and saved to original file, even when FileSystemWatcher fails to fire events
 
 ### Security
 - **Framework-dependent build fixed**: Removed ReadyToRun compilation that caused runtime compatibility issues
