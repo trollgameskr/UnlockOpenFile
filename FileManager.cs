@@ -216,10 +216,13 @@ namespace UnlockOpenFile
             }
         }
 
-        private void OnFileCreated(object sender, FileSystemEventArgs e)
+        private async void OnFileCreated(object sender, FileSystemEventArgs e)
         {
             try
             {
+                // Minimal debounce to avoid multiple rapid-fire events
+                await Task.Delay(50);
+                
                 OnStatusChanged("임시 파일이 다시 생성되었습니다.");
                 // Reset the last modified time to track changes from the newly created file
                 if (File.Exists(_tempFilePath))
