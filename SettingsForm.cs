@@ -1311,8 +1311,10 @@ namespace UnlockOpenFile
                     return;
                 }
 
-                // Check if files exist
-                var missingFiles = groupFiles.Where(f => !System.IO.File.Exists(f)).ToList();
+                // Check which files exist
+                var existingFiles = groupFiles.Where(f => System.IO.File.Exists(f)).ToList();
+                var missingFiles = groupFiles.Except(existingFiles).ToList();
+                
                 if (missingFiles.Count > 0)
                 {
                     var fileList = string.Join("\n", missingFiles.Select(f => System.IO.Path.GetFileName(f)));
@@ -1328,16 +1330,21 @@ namespace UnlockOpenFile
                     }
                 }
 
+                // Check if there are any files to open
+                if (existingFiles.Count == 0)
+                {
+                    MessageBox.Show($"'{groupName}' 그룹의 파일을 찾을 수 없습니다.", "오류",
+                        MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+
                 // Create and show MainForm with the files
                 var mainForm = new MainForm();
                 
-                // Open each file in the group
-                foreach (var filePath in groupFiles)
+                // Open each existing file in the group
+                foreach (var filePath in existingFiles)
                 {
-                    if (System.IO.File.Exists(filePath))
-                    {
-                        mainForm.OpenFile(filePath);
-                    }
+                    mainForm.OpenFile(filePath);
                 }
                 
                 mainForm.Show();
