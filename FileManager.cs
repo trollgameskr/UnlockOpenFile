@@ -261,8 +261,7 @@ namespace UnlockOpenFile
             
             OnStatusChanged("프로그램이 종료되었습니다.");
             
-            // Notify that the process has exited
-            // Note: All changes are already saved immediately via FileSystemWatcher
+            // All file changes are automatically saved by FileSystemWatcher's OnFileChanged handler
             ProcessExited?.Invoke(this, EventArgs.Empty);
         }
 
@@ -279,7 +278,6 @@ namespace UnlockOpenFile
                         OnStatusChanged("임시 파일이 삭제되었습니다. 파일을 닫습니다.");
                         StopFileMonitoring();
                         
-                        // Note: All changes are already saved immediately via FileSystemWatcher
                         ProcessExited?.Invoke(this, EventArgs.Empty);
                         return;
                     }
@@ -296,7 +294,6 @@ namespace UnlockOpenFile
                             OnStatusChanged("파일이 10초 이상 수정되지 않았고 잠금이 해제되었습니다. 파일을 닫습니다.");
                             StopFileMonitoring();
                             
-                            // Note: All changes are already saved immediately via FileSystemWatcher
                             ProcessExited?.Invoke(this, EventArgs.Empty);
                         }
                     }
@@ -508,7 +505,7 @@ namespace UnlockOpenFile
                 
                 _fileWatcher?.Dispose();
                 
-                // Delete temporary file - all changes are already saved immediately via FileSystemWatcher
+                // Delete temporary file (changes already persisted by FileSystemWatcher)
                 if (File.Exists(_tempFilePath))
                 {
                     File.Delete(_tempFilePath);
