@@ -83,6 +83,10 @@ All requirements from the problem statement are implemented:
 - Pending save task tracking to prevent premature cleanup
 - **PublishSingleFile** option for framework-dependent builds to create single executable
 - **Embedded debug symbols** for better PE structure in Release builds
+- **File Group Management**: Create groups of files that should be opened together
+- FileGroupManager class for managing file groups in registry
+- File Groups UI section in SettingsForm for adding, removing, and managing file groups
+- Automatic opening of all files in a group when one file is opened
 
 ### Changed
 - FileManager now checks custom application settings before falling back to Windows defaults
