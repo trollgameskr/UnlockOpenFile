@@ -1,5 +1,6 @@
 using System;
 using System.Drawing;
+using System.Linq;
 using System.Windows.Forms;
 using Microsoft.Win32;
 
@@ -27,6 +28,7 @@ namespace UnlockOpenFile
         private Button _removeGroupButton = null!;
         private Button _manageGroupFilesButton = null!;
         private Button _renameGroupButton = null!;
+        private Button _openGroupButton = null!;
 
         public SettingsForm()
         {
@@ -245,10 +247,20 @@ namespace UnlockOpenFile
             _manageGroupFilesButton.Click += OnManageGroupFilesClick;
             _fileGroupsGroup.Controls.Add(_manageGroupFilesButton);
 
+            _openGroupButton = new Button
+            {
+                Text = "그룹 열기",
+                Location = new Point(590, 165),
+                Width = 80,
+                Height = 30
+            };
+            _openGroupButton.Click += OnOpenGroupClick;
+            _fileGroupsGroup.Controls.Add(_openGroupButton);
+
             _removeGroupButton = new Button
             {
                 Text = "삭제",
-                Location = new Point(590, 165),
+                Location = new Point(590, 205),
                 Width = 80,
                 Height = 30
             };
@@ -1275,6 +1287,70 @@ namespace UnlockOpenFile
         {
             // Trigger rename on double-click
             OnRenameGroupClick(sender, e);
+        }
+
+        private void OnOpenGroupClick(object? sender, EventArgs e)
+        {
+            if (_fileGroupsListView.SelectedItems.Count == 0)
+            {
+                MessageBox.Show("열 그룹을 선택해주세요.", "알림", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            var selectedItem = _fileGroupsListView.SelectedItems[0];
+            var groupName = selectedItem.Text;
+
+            try
+            {
+                var groupFiles = FileGroupManager.GetGroupFiles(groupName);
+                
+                if (groupFiles.Count == 0)
+                {
+                    MessageBox.Show($"'{groupName}' 그룹에 파일이 없습니다.", "알림", 
+                        MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return;
+                }
+
+                // Check if files exist
+                var missingFiles = groupFiles.Where(f => !System.IO.File.Exists(f)).ToList();
+                if (missingFiles.Count > 0)
+                {
+                    var fileList = string.Join("\n", missingFiles.Select(f => System.IO.Path.GetFileName(f)));
+                    var result = MessageBox.Show(
+                        $"다음 파일을 찾을 수 없습니다:\n{fileList}\n\n계속 진행하시겠습니까?",
+                        "파일 없음",
+                        MessageBoxButtons.YesNo,
+                        MessageBoxIcon.Warning);
+                    
+                    if (result != DialogResult.Yes)
+                    {
+                        return;
+                    }
+                }
+
+                // Create and show MainForm with the files
+                var mainForm = new MainForm();
+                
+                // Open each file in the group
+                foreach (var filePath in groupFiles)
+                {
+                    if (System.IO.File.Exists(filePath))
+                    {
+                        mainForm.OpenFile(filePath);
+                    }
+                }
+                
+                mainForm.Show();
+                mainForm.BringToFront();
+                
+                AddLog($"'{groupName}' 그룹의 파일들을 열었습니다.");
+            }
+            catch (Exception ex)
+            {
+                AddLog($"그룹 열기 오류: {ex.Message}");
+                MessageBox.Show($"그룹을 열 수 없습니다: {ex.Message}", "오류",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
     }
 }
