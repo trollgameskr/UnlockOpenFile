@@ -1338,14 +1338,10 @@ namespace UnlockOpenFile
                     return;
                 }
 
-                // Create and show MainForm with the files
+                // Create MainForm and open the first file
+                // MainForm.OpenFile will automatically open all files in the group
                 var mainForm = new MainForm();
-                
-                // Open each existing file in the group
-                foreach (var filePath in existingFiles)
-                {
-                    mainForm.OpenFile(filePath);
-                }
+                mainForm.OpenFile(existingFiles[0]);
                 
                 mainForm.Show();
                 mainForm.BringToFront();
