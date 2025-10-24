@@ -87,6 +87,9 @@ All requirements from the problem statement are implemented:
 - FileGroupManager class for managing file groups in registry
 - File Groups UI section in SettingsForm for adding, removing, and managing file groups
 - Automatic opening of all files in a group when one file is opened
+- **File Group Rename**: Rename existing file groups through UI button or double-click
+- **Add from Recent Files**: Add files to groups from recent files list with checkbox selection
+- IsFileInListView() helper method for duplicate file checking
 
 ### Changed
 - FileManager now checks custom application settings before falling back to Windows defaults
@@ -99,6 +102,9 @@ All requirements from the problem statement are implemented:
 - **SECURITY.md updated** to be simplified and focus on security policy
 - **README.md updated** to add download section recommending Standalone build
 - **QUICKSTART.md updated** to prioritize downloading Standalone release over building from source
+- **File Group Management dialog** width increased from 600px to 700px for better layout
+- **File Group buttons** repositioned to accommodate rename button (추가, 이름 변경, 파일 관리, 삭제)
+- File Groups ListView now supports double-click to rename groups
 
 ### Fixed
 - Temporary files now open with user-specified applications instead of always using Notepad
@@ -106,6 +112,7 @@ All requirements from the problem statement are implemented:
 - FileSaved event is now properly utilized to notify users when sync completes
 - **Critical fix**: Program no longer terminates prematurely when editor closes, ensuring all changes are saved to original file
 - Save operations are now tracked and awaited before cleanup, preventing data loss
+- Duplicate files are now prevented when adding to file groups
 
 ### Security
 - **Framework-dependent build fixed**: Removed ReadyToRun compilation that caused runtime compatibility issues
