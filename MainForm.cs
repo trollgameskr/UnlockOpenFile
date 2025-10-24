@@ -10,6 +10,7 @@ namespace UnlockOpenFile
     public class MainForm : Form
     {
         private ListView _fileListView = null!;
+        private ListView _recentFilesListView = null!;
         private TextBox _logTextBox = null!;
         private Button _settingsButton = null!;
         private Button _closeAllButton = null!;
@@ -32,13 +33,14 @@ namespace UnlockOpenFile
             var mainPanel = new TableLayoutPanel
             {
                 Dock = DockStyle.Fill,
-                RowCount = 3,
+                RowCount = 4,
                 ColumnCount = 1,
                 Padding = new Padding(10)
             };
 
-            mainPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 50));
-            mainPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 50));
+            mainPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 33.33f));
+            mainPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 33.33f));
+            mainPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 33.33f));
             mainPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 50));
 
             // File list view
@@ -62,6 +64,28 @@ namespace UnlockOpenFile
             _fileListView.Columns.Add("상태", 150);
 
             fileGroup.Controls.Add(_fileListView);
+
+            // Recent files list view
+            var recentFilesGroup = new GroupBox
+            {
+                Text = "최근 열었던 파일",
+                Dock = DockStyle.Fill,
+                Padding = new Padding(10)
+            };
+
+            _recentFilesListView = new ListView
+            {
+                Dock = DockStyle.Fill,
+                View = View.Details,
+                FullRowSelect = true,
+                GridLines = true
+            };
+
+            _recentFilesListView.Columns.Add("파일명", 200);
+            _recentFilesListView.Columns.Add("경로", 400);
+            _recentFilesListView.DoubleClick += OnRecentFileDoubleClick;
+
+            recentFilesGroup.Controls.Add(_recentFilesListView);
 
             // Log textbox
             var logGroup = new GroupBox
@@ -112,8 +136,9 @@ namespace UnlockOpenFile
             buttonPanel.Controls.Add(_settingsButton);
 
             mainPanel.Controls.Add(fileGroup, 0, 0);
-            mainPanel.Controls.Add(logGroup, 0, 1);
-            mainPanel.Controls.Add(buttonPanel, 0, 2);
+            mainPanel.Controls.Add(recentFilesGroup, 0, 1);
+            mainPanel.Controls.Add(logGroup, 0, 2);
+            mainPanel.Controls.Add(buttonPanel, 0, 3);
 
             this.Controls.Add(mainPanel);
 
@@ -142,6 +167,9 @@ namespace UnlockOpenFile
             contextMenu.Items.Add("설정", null, (s, e) => OnSettingsClick(s, e));
             contextMenu.Items.Add("종료", null, (s, e) => this.Close());
             _notifyIcon.ContextMenuStrip = contextMenu;
+
+            // Load recent files
+            LoadRecentFiles();
 
             AddLog("UnlockOpenFile가 시작되었습니다.");
         }
@@ -231,6 +259,10 @@ namespace UnlockOpenFile
 
                 AddFileToList(filePath);
                 _ = fileManager.OpenFileAsync();
+
+                // Add to recent files
+                RecentFilesManager.AddRecentFile(filePath);
+                LoadRecentFiles();
 
                 AddLog($"파일 열기: {filePath}");
             }
@@ -344,6 +376,49 @@ namespace UnlockOpenFile
             _logTextBox.AppendText($"[{DateTime.Now:HH:mm:ss}] {message}\r\n");
             _logTextBox.SelectionStart = _logTextBox.Text.Length;
             _logTextBox.ScrollToCaret();
+        }
+
+        private void LoadRecentFiles()
+        {
+            if (_recentFilesListView.InvokeRequired)
+            {
+                _recentFilesListView.Invoke(() => LoadRecentFiles());
+                return;
+            }
+
+            _recentFilesListView.Items.Clear();
+            var recentFiles = RecentFilesManager.GetRecentFiles();
+            
+            foreach (var filePath in recentFiles)
+            {
+                var item = new ListViewItem(System.IO.Path.GetFileName(filePath));
+                item.SubItems.Add(filePath);
+                item.Tag = filePath;
+                _recentFilesListView.Items.Add(item);
+            }
+        }
+
+        private void OnRecentFileDoubleClick(object? sender, EventArgs e)
+        {
+            if (_recentFilesListView.SelectedItems.Count > 0)
+            {
+                var selectedItem = _recentFilesListView.SelectedItems[0];
+                var filePath = selectedItem.Tag?.ToString();
+                
+                if (!string.IsNullOrEmpty(filePath))
+                {
+                    if (System.IO.File.Exists(filePath))
+                    {
+                        OpenFile(filePath);
+                    }
+                    else
+                    {
+                        MessageBox.Show($"파일을 찾을 수 없습니다: {filePath}", "오류",
+                            MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        AddLog($"파일을 찾을 수 없습니다: {filePath}");
+                    }
+                }
+            }
         }
     }
 }
