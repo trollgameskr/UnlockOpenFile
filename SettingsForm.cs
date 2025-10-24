@@ -26,6 +26,7 @@ namespace UnlockOpenFile
         private Button _addGroupButton = null!;
         private Button _removeGroupButton = null!;
         private Button _manageGroupFilesButton = null!;
+        private Button _renameGroupButton = null!;
 
         public SettingsForm()
         {
@@ -211,6 +212,7 @@ namespace UnlockOpenFile
             _fileGroupsListView.Columns.Add("그룹 이름", 150);
             _fileGroupsListView.Columns.Add("파일 수", 100);
             _fileGroupsListView.Columns.Add("파일 목록", 300);
+            _fileGroupsListView.DoubleClick += OnFileGroupsListViewDoubleClick;
             _fileGroupsGroup.Controls.Add(_fileGroupsListView);
 
             _addGroupButton = new Button
@@ -223,10 +225,20 @@ namespace UnlockOpenFile
             _addGroupButton.Click += OnAddGroupClick;
             _fileGroupsGroup.Controls.Add(_addGroupButton);
 
+            _renameGroupButton = new Button
+            {
+                Text = "이름 변경",
+                Location = new Point(590, 85),
+                Width = 80,
+                Height = 30
+            };
+            _renameGroupButton.Click += OnRenameGroupClick;
+            _fileGroupsGroup.Controls.Add(_renameGroupButton);
+
             _manageGroupFilesButton = new Button
             {
                 Text = "파일 관리",
-                Location = new Point(590, 85),
+                Location = new Point(590, 125),
                 Width = 80,
                 Height = 30
             };
@@ -236,7 +248,7 @@ namespace UnlockOpenFile
             _removeGroupButton = new Button
             {
                 Text = "삭제",
-                Location = new Point(590, 125),
+                Location = new Point(590, 165),
                 Width = 80,
                 Height = 30
             };
@@ -892,7 +904,7 @@ namespace UnlockOpenFile
             using var manageDialog = new Form
             {
                 Text = $"'{groupName}' 그룹 파일 관리",
-                Size = new Size(600, 500),
+                Size = new Size(700, 500),
                 StartPosition = FormStartPosition.CenterParent,
                 FormBorderStyle = FormBorderStyle.FixedDialog,
                 MaximizeBox = false,
@@ -945,10 +957,15 @@ namespace UnlockOpenFile
                         try
                         {
                             FileGroupManager.AddFileToGroup(groupName, filePath);
-                            var item = new ListViewItem(System.IO.Path.GetFileName(filePath));
-                            item.SubItems.Add(filePath);
-                            item.Tag = filePath;
-                            filesListView.Items.Add(item);
+                            
+                            // Add to list view if not already present
+                            if (!IsFileInListView(filesListView, filePath))
+                            {
+                                var item = new ListViewItem(System.IO.Path.GetFileName(filePath));
+                                item.SubItems.Add(filePath);
+                                item.Tag = filePath;
+                                filesListView.Items.Add(item);
+                            }
                         }
                         catch (Exception ex)
                         {
@@ -960,10 +977,119 @@ namespace UnlockOpenFile
             };
             manageDialog.Controls.Add(addButton);
 
+            var addFromRecentButton = new Button
+            {
+                Text = "최근 목록에서 추가",
+                Location = new Point(590, 20),
+                Width = 90,
+                Height = 40
+            };
+            addFromRecentButton.Click += (s, ev) =>
+            {
+                // Create a dialog to select from recent files
+                using var recentDialog = new Form
+                {
+                    Text = "최근 파일에서 선택",
+                    Size = new Size(600, 400),
+                    StartPosition = FormStartPosition.CenterParent,
+                    FormBorderStyle = FormBorderStyle.FixedDialog,
+                    MaximizeBox = false,
+                    MinimizeBox = false
+                };
+
+                var recentListView = new ListView
+                {
+                    Location = new Point(20, 20),
+                    Size = new Size(540, 280),
+                    View = View.Details,
+                    FullRowSelect = true,
+                    GridLines = true,
+                    CheckBoxes = true
+                };
+                recentListView.Columns.Add("파일명", 150);
+                recentListView.Columns.Add("경로", 380);
+
+                // Load recent files
+                var recentFiles = RecentFilesManager.GetRecentFiles();
+                foreach (var filePath in recentFiles)
+                {
+                    var item = new ListViewItem(System.IO.Path.GetFileName(filePath));
+                    item.SubItems.Add(filePath);
+                    item.Tag = filePath;
+                    recentListView.Items.Add(item);
+                }
+
+                recentDialog.Controls.Add(recentListView);
+
+                var okButton = new Button
+                {
+                    Text = "추가",
+                    Location = new Point(400, 310),
+                    Width = 80,
+                    Height = 30,
+                    DialogResult = DialogResult.OK
+                };
+                recentDialog.Controls.Add(okButton);
+
+                var cancelButton = new Button
+                {
+                    Text = "취소",
+                    Location = new Point(490, 310),
+                    Width = 80,
+                    Height = 30,
+                    DialogResult = DialogResult.Cancel
+                };
+                recentDialog.Controls.Add(cancelButton);
+
+                recentDialog.AcceptButton = okButton;
+                recentDialog.CancelButton = cancelButton;
+
+                if (recentDialog.ShowDialog() == DialogResult.OK)
+                {
+                    var addedCount = 0;
+                    foreach (ListViewItem item in recentListView.Items)
+                    {
+                        if (item.Checked)
+                        {
+                            var filePath = item.Tag?.ToString();
+                            if (!string.IsNullOrEmpty(filePath))
+                            {
+                                try
+                                {
+                                    FileGroupManager.AddFileToGroup(groupName, filePath);
+                                    
+                                    // Add to list view if not already present
+                                    if (!IsFileInListView(filesListView, filePath))
+                                    {
+                                        var newItem = new ListViewItem(System.IO.Path.GetFileName(filePath));
+                                        newItem.SubItems.Add(filePath);
+                                        newItem.Tag = filePath;
+                                        filesListView.Items.Add(newItem);
+                                        addedCount++;
+                                    }
+                                }
+                                catch (Exception ex)
+                                {
+                                    MessageBox.Show($"파일 추가 오류: {ex.Message}", "오류",
+                                        MessageBoxButtons.OK, MessageBoxIcon.Error);
+                                }
+                            }
+                        }
+                    }
+                    
+                    if (addedCount > 0)
+                    {
+                        MessageBox.Show($"{addedCount}개의 파일이 추가되었습니다.", "완료",
+                            MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    }
+                }
+            };
+            manageDialog.Controls.Add(addFromRecentButton);
+
             var removeButton = new Button
             {
                 Text = "파일 제거",
-                Location = new Point(480, 60),
+                Location = new Point(480, 70),
                 Width = 100,
                 Height = 30
             };
@@ -988,7 +1114,7 @@ namespace UnlockOpenFile
             var closeButton = new Button
             {
                 Text = "닫기",
-                Location = new Point(480, 420),
+                Location = new Point(580, 420),
                 Width = 100,
                 Height = 30,
                 DialogResult = DialogResult.OK
@@ -1001,6 +1127,18 @@ namespace UnlockOpenFile
                 AddLog($"'{groupName}' 그룹 파일 관리 완료.");
                 LoadFileGroups();
             }
+        }
+
+        private bool IsFileInListView(ListView listView, string filePath)
+        {
+            foreach (ListViewItem item in listView.Items)
+            {
+                if (item.Tag?.ToString()?.Equals(filePath, StringComparison.OrdinalIgnoreCase) == true)
+                {
+                    return true;
+                }
+            }
+            return false;
         }
 
         private void OnRemoveGroupClick(object? sender, EventArgs e)
@@ -1035,6 +1173,108 @@ namespace UnlockOpenFile
                         MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
+        }
+
+        private void OnRenameGroupClick(object? sender, EventArgs e)
+        {
+            if (_fileGroupsListView.SelectedItems.Count == 0)
+            {
+                MessageBox.Show("이름을 변경할 그룹을 선택해주세요.", "알림", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            var selectedItem = _fileGroupsListView.SelectedItems[0];
+            var oldGroupName = selectedItem.Text;
+
+            // Create a simple input dialog for new group name
+            using var renameDialog = new Form
+            {
+                Text = "그룹 이름 변경",
+                Size = new Size(400, 150),
+                StartPosition = FormStartPosition.CenterParent,
+                FormBorderStyle = FormBorderStyle.FixedDialog,
+                MaximizeBox = false,
+                MinimizeBox = false
+            };
+
+            var label = new Label
+            {
+                Text = "새 그룹 이름을 입력하세요:",
+                Location = new Point(20, 20),
+                AutoSize = true
+            };
+
+            var textBox = new TextBox
+            {
+                Location = new Point(20, 45),
+                Width = 340,
+                Text = oldGroupName
+            };
+
+            var okButton = new Button
+            {
+                Text = "확인",
+                DialogResult = DialogResult.OK,
+                Location = new Point(200, 75),
+                Width = 80
+            };
+
+            var cancelButton = new Button
+            {
+                Text = "취소",
+                DialogResult = DialogResult.Cancel,
+                Location = new Point(290, 75),
+                Width = 80
+            };
+
+            renameDialog.Controls.Add(label);
+            renameDialog.Controls.Add(textBox);
+            renameDialog.Controls.Add(okButton);
+            renameDialog.Controls.Add(cancelButton);
+            renameDialog.AcceptButton = okButton;
+            renameDialog.CancelButton = cancelButton;
+
+            if (renameDialog.ShowDialog() == DialogResult.OK)
+            {
+                var newGroupName = textBox.Text.Trim();
+                if (string.IsNullOrEmpty(newGroupName))
+                {
+                    MessageBox.Show("그룹 이름을 입력해주세요.", "오류", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+
+                if (newGroupName.Equals(oldGroupName, StringComparison.OrdinalIgnoreCase))
+                {
+                    return; // No change
+                }
+
+                // Check if new group name already exists
+                var existingGroups = FileGroupManager.GetAllGroups();
+                if (existingGroups.ContainsKey(newGroupName))
+                {
+                    MessageBox.Show($"'{newGroupName}' 그룹이 이미 존재합니다.", "오류", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+
+                try
+                {
+                    FileGroupManager.RenameGroup(oldGroupName, newGroupName);
+                    AddLog($"'{oldGroupName}' 그룹이 '{newGroupName}'(으)로 이름이 변경되었습니다.");
+                    LoadFileGroups();
+                }
+                catch (Exception ex)
+                {
+                    AddLog($"그룹 이름 변경 오류: {ex.Message}");
+                    MessageBox.Show($"그룹 이름 변경에 실패했습니다: {ex.Message}", "오류",
+                        MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+        }
+
+        private void OnFileGroupsListViewDoubleClick(object? sender, EventArgs e)
+        {
+            // Trigger rename on double-click
+            OnRenameGroupClick(sender, e);
         }
     }
 }
