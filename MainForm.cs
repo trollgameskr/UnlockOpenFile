@@ -178,6 +178,44 @@ namespace UnlockOpenFile
         {
             try
             {
+                // Check if this file belongs to a group
+                var groupName = FileGroupManager.GetFileGroup(filePath);
+                if (!string.IsNullOrEmpty(groupName))
+                {
+                    var groupFiles = FileGroupManager.GetGroupFiles(groupName);
+                    AddLog($"파일이 '{groupName}' 그룹에 속해 있습니다. 그룹의 모든 파일을 엽니다.");
+                    
+                    // Open all files in the group
+                    foreach (var groupFilePath in groupFiles)
+                    {
+                        if (System.IO.File.Exists(groupFilePath))
+                        {
+                            OpenSingleFile(groupFilePath);
+                        }
+                        else
+                        {
+                            AddLog($"파일을 찾을 수 없습니다: {groupFilePath}");
+                        }
+                    }
+                }
+                else
+                {
+                    // File is not in a group, open it normally
+                    OpenSingleFile(filePath);
+                }
+            }
+            catch (Exception ex)
+            {
+                AddLog($"파일 열기 오류: {ex.Message}");
+                MessageBox.Show($"파일을 열 수 없습니다: {ex.Message}", "오류",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void OpenSingleFile(string filePath)
+        {
+            try
+            {
                 if (_fileManagers.ContainsKey(filePath))
                 {
                     // Check if the file is actually still in use
@@ -268,7 +306,7 @@ namespace UnlockOpenFile
             }
             catch (Exception ex)
             {
-                AddLog($"파일 열기 오류: {ex.Message}");
+                AddLog($"단일 파일 열기 오류: {ex.Message}");
                 MessageBox.Show($"파일을 열 수 없습니다: {ex.Message}", "오류",
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
             }

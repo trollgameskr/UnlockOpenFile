@@ -21,6 +21,11 @@ namespace UnlockOpenFile
         private ListView _applicationListView = null!;
         private Button _addApplicationButton = null!;
         private Button _removeApplicationButton = null!;
+        private GroupBox _fileGroupsGroup = null!;
+        private ListView _fileGroupsListView = null!;
+        private Button _addGroupButton = null!;
+        private Button _removeGroupButton = null!;
+        private Button _manageGroupFilesButton = null!;
 
         public SettingsForm()
         {
@@ -31,7 +36,7 @@ namespace UnlockOpenFile
         private void InitializeComponents()
         {
             this.Text = "UnlockOpenFile - 설정";
-            this.Size = new Size(700, 700);
+            this.Size = new Size(700, 850);
             this.StartPosition = FormStartPosition.CenterScreen;
             this.FormBorderStyle = FormBorderStyle.FixedDialog;
             this.MaximizeBox = false;
@@ -39,13 +44,14 @@ namespace UnlockOpenFile
             var mainPanel = new TableLayoutPanel
             {
                 Dock = DockStyle.Fill,
-                RowCount = 5,
+                RowCount = 6,
                 ColumnCount = 1,
                 Padding = new Padding(10)
             };
 
             mainPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 120));
             mainPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 100));
+            mainPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 200));
             mainPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 200));
             mainPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
             mainPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 50));
@@ -178,6 +184,65 @@ namespace UnlockOpenFile
             _removeApplicationButton.Click += OnRemoveApplicationClick;
             _customApplicationGroup.Controls.Add(_removeApplicationButton);
 
+            // File groups group
+            _fileGroupsGroup = new GroupBox
+            {
+                Text = "파일 그룹 관리",
+                Dock = DockStyle.Fill,
+                Padding = new Padding(10)
+            };
+
+            var fileGroupsLabel = new Label
+            {
+                Text = "함께 열리는 파일 그룹을 관리합니다. 그룹의 파일 중 하나를 열면 모든 파일이 함께 열립니다:",
+                Location = new Point(20, 20),
+                Size = new Size(600, 20)
+            };
+            _fileGroupsGroup.Controls.Add(fileGroupsLabel);
+
+            _fileGroupsListView = new ListView
+            {
+                Location = new Point(20, 45),
+                Size = new Size(560, 110),
+                View = View.Details,
+                FullRowSelect = true,
+                GridLines = true
+            };
+            _fileGroupsListView.Columns.Add("그룹 이름", 150);
+            _fileGroupsListView.Columns.Add("파일 수", 100);
+            _fileGroupsListView.Columns.Add("파일 목록", 300);
+            _fileGroupsGroup.Controls.Add(_fileGroupsListView);
+
+            _addGroupButton = new Button
+            {
+                Text = "추가",
+                Location = new Point(590, 45),
+                Width = 80,
+                Height = 30
+            };
+            _addGroupButton.Click += OnAddGroupClick;
+            _fileGroupsGroup.Controls.Add(_addGroupButton);
+
+            _manageGroupFilesButton = new Button
+            {
+                Text = "파일 관리",
+                Location = new Point(590, 85),
+                Width = 80,
+                Height = 30
+            };
+            _manageGroupFilesButton.Click += OnManageGroupFilesClick;
+            _fileGroupsGroup.Controls.Add(_manageGroupFilesButton);
+
+            _removeGroupButton = new Button
+            {
+                Text = "삭제",
+                Location = new Point(590, 125),
+                Width = 80,
+                Height = 30
+            };
+            _removeGroupButton.Click += OnRemoveGroupClick;
+            _fileGroupsGroup.Controls.Add(_removeGroupButton);
+
             // Log textbox
             _logTextBox = new TextBox
             {
@@ -223,8 +288,9 @@ namespace UnlockOpenFile
             mainPanel.Controls.Add(_startupGroup, 0, 0);
             mainPanel.Controls.Add(_fileAssociationGroup, 0, 1);
             mainPanel.Controls.Add(_customApplicationGroup, 0, 2);
-            mainPanel.Controls.Add(_logTextBox, 0, 3);
-            mainPanel.Controls.Add(buttonPanel, 0, 4);
+            mainPanel.Controls.Add(_fileGroupsGroup, 0, 3);
+            mainPanel.Controls.Add(_logTextBox, 0, 4);
+            mainPanel.Controls.Add(buttonPanel, 0, 5);
 
             this.Controls.Add(mainPanel);
 
@@ -246,6 +312,9 @@ namespace UnlockOpenFile
 
                 // Load custom application paths
                 LoadCustomApplications();
+
+                // Load file groups
+                LoadFileGroups();
             }
             catch (Exception ex)
             {
@@ -532,6 +601,7 @@ namespace UnlockOpenFile
                 "- 시작 프로그램 등록\n" +
                 "- 파일 연결 (.xlsx, .csv)\n" +
                 "- 사용자 지정 응용 프로그램 설정\n" +
+                "- 파일 그룹\n" +
                 "- 최근 파일 목록\n\n" +
                 "이 작업은 되돌릴 수 없습니다.",
                 "모든 설정 초기화",
@@ -580,6 +650,9 @@ namespace UnlockOpenFile
 
                     // Clear all custom application paths
                     ApplicationSettings.ClearAllSettings();
+
+                    // Clear all file groups
+                    FileGroupManager.ClearAllGroups();
 
                     // Clear recent files
                     RecentFilesManager.ClearRecentFiles();
@@ -682,6 +755,285 @@ namespace UnlockOpenFile
             else
             {
                 AddLog("탐색기 재시작을 건너뜁니다. 변경 사항을 적용하려면 나중에 로그아웃 후 다시 로그인하거나 PC를 재시작하세요.");
+            }
+        }
+
+        private void LoadFileGroups()
+        {
+            _fileGroupsListView.Items.Clear();
+            var groups = FileGroupManager.GetAllGroups();
+            foreach (var group in groups)
+            {
+                var item = new ListViewItem(group.Key);
+                item.SubItems.Add(group.Value.Count.ToString());
+                var fileNames = string.Join(", ", group.Value.Select(f => System.IO.Path.GetFileName(f)));
+                if (fileNames.Length > 50)
+                {
+                    fileNames = fileNames.Substring(0, 47) + "...";
+                }
+                item.SubItems.Add(fileNames);
+                _fileGroupsListView.Items.Add(item);
+            }
+        }
+
+        private void OnAddGroupClick(object? sender, EventArgs e)
+        {
+            // Create a simple input dialog for group name
+            using var groupDialog = new Form
+            {
+                Text = "그룹 추가",
+                Size = new Size(400, 150),
+                StartPosition = FormStartPosition.CenterParent,
+                FormBorderStyle = FormBorderStyle.FixedDialog,
+                MaximizeBox = false,
+                MinimizeBox = false
+            };
+
+            var label = new Label
+            {
+                Text = "그룹 이름을 입력하세요:",
+                Location = new Point(20, 20),
+                AutoSize = true
+            };
+
+            var textBox = new TextBox
+            {
+                Location = new Point(20, 45),
+                Width = 340
+            };
+
+            var okButton = new Button
+            {
+                Text = "확인",
+                DialogResult = DialogResult.OK,
+                Location = new Point(200, 75),
+                Width = 80
+            };
+
+            var cancelButton = new Button
+            {
+                Text = "취소",
+                DialogResult = DialogResult.Cancel,
+                Location = new Point(290, 75),
+                Width = 80
+            };
+
+            groupDialog.Controls.Add(label);
+            groupDialog.Controls.Add(textBox);
+            groupDialog.Controls.Add(okButton);
+            groupDialog.Controls.Add(cancelButton);
+            groupDialog.AcceptButton = okButton;
+            groupDialog.CancelButton = cancelButton;
+
+            if (groupDialog.ShowDialog() == DialogResult.OK)
+            {
+                var groupName = textBox.Text.Trim();
+                if (string.IsNullOrEmpty(groupName))
+                {
+                    MessageBox.Show("그룹 이름을 입력해주세요.", "오류", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+
+                // Check if group already exists
+                var existingGroups = FileGroupManager.GetAllGroups();
+                if (existingGroups.ContainsKey(groupName))
+                {
+                    MessageBox.Show($"'{groupName}' 그룹이 이미 존재합니다.", "오류", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+
+                // Open file dialog to select files for the group
+                using var openFileDialog = new OpenFileDialog
+                {
+                    Title = $"'{groupName}' 그룹에 추가할 파일 선택",
+                    Filter = "모든 파일 (*.*)|*.*",
+                    Multiselect = true
+                };
+
+                if (openFileDialog.ShowDialog() == DialogResult.OK)
+                {
+                    if (openFileDialog.FileNames.Length == 0)
+                    {
+                        MessageBox.Show("파일을 하나 이상 선택해주세요.", "오류", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        return;
+                    }
+
+                    try
+                    {
+                        foreach (var filePath in openFileDialog.FileNames)
+                        {
+                            FileGroupManager.AddFileToGroup(groupName, filePath);
+                        }
+                        AddLog($"'{groupName}' 그룹에 {openFileDialog.FileNames.Length}개 파일이 추가되었습니다.");
+                        LoadFileGroups();
+                    }
+                    catch (Exception ex)
+                    {
+                        AddLog($"그룹 추가 오류: {ex.Message}");
+                        MessageBox.Show($"그룹 추가에 실패했습니다: {ex.Message}", "오류",
+                            MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                }
+            }
+        }
+
+        private void OnManageGroupFilesClick(object? sender, EventArgs e)
+        {
+            if (_fileGroupsListView.SelectedItems.Count == 0)
+            {
+                MessageBox.Show("관리할 그룹을 선택해주세요.", "알림", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            var selectedItem = _fileGroupsListView.SelectedItems[0];
+            var groupName = selectedItem.Text;
+
+            // Create a dialog to manage files in the group
+            using var manageDialog = new Form
+            {
+                Text = $"'{groupName}' 그룹 파일 관리",
+                Size = new Size(600, 500),
+                StartPosition = FormStartPosition.CenterParent,
+                FormBorderStyle = FormBorderStyle.FixedDialog,
+                MaximizeBox = false,
+                MinimizeBox = false
+            };
+
+            var filesListView = new ListView
+            {
+                Location = new Point(20, 20),
+                Size = new Size(450, 380),
+                View = View.Details,
+                FullRowSelect = true,
+                GridLines = true
+            };
+            filesListView.Columns.Add("파일명", 150);
+            filesListView.Columns.Add("경로", 290);
+
+            // Load files from the group
+            var groupFiles = FileGroupManager.GetGroupFiles(groupName);
+            foreach (var filePath in groupFiles)
+            {
+                var item = new ListViewItem(System.IO.Path.GetFileName(filePath));
+                item.SubItems.Add(filePath);
+                item.Tag = filePath;
+                filesListView.Items.Add(item);
+            }
+
+            manageDialog.Controls.Add(filesListView);
+
+            var addButton = new Button
+            {
+                Text = "파일 추가",
+                Location = new Point(480, 20),
+                Width = 100,
+                Height = 30
+            };
+            addButton.Click += (s, ev) =>
+            {
+                using var openFileDialog = new OpenFileDialog
+                {
+                    Title = $"'{groupName}' 그룹에 추가할 파일 선택",
+                    Filter = "모든 파일 (*.*)|*.*",
+                    Multiselect = true
+                };
+
+                if (openFileDialog.ShowDialog() == DialogResult.OK)
+                {
+                    foreach (var filePath in openFileDialog.FileNames)
+                    {
+                        try
+                        {
+                            FileGroupManager.AddFileToGroup(groupName, filePath);
+                            var item = new ListViewItem(System.IO.Path.GetFileName(filePath));
+                            item.SubItems.Add(filePath);
+                            item.Tag = filePath;
+                            filesListView.Items.Add(item);
+                        }
+                        catch (Exception ex)
+                        {
+                            MessageBox.Show($"파일 추가 오류: {ex.Message}", "오류",
+                                MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        }
+                    }
+                }
+            };
+            manageDialog.Controls.Add(addButton);
+
+            var removeButton = new Button
+            {
+                Text = "파일 제거",
+                Location = new Point(480, 60),
+                Width = 100,
+                Height = 30
+            };
+            removeButton.Click += (s, ev) =>
+            {
+                if (filesListView.SelectedItems.Count == 0)
+                {
+                    MessageBox.Show("제거할 파일을 선택해주세요.", "알림", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return;
+                }
+
+                var selectedFile = filesListView.SelectedItems[0];
+                var filePath = selectedFile.Tag?.ToString();
+                if (!string.IsNullOrEmpty(filePath))
+                {
+                    FileGroupManager.RemoveFileFromGroup(groupName, filePath);
+                    filesListView.Items.Remove(selectedFile);
+                }
+            };
+            manageDialog.Controls.Add(removeButton);
+
+            var closeButton = new Button
+            {
+                Text = "닫기",
+                Location = new Point(480, 420),
+                Width = 100,
+                Height = 30,
+                DialogResult = DialogResult.OK
+            };
+            manageDialog.Controls.Add(closeButton);
+            manageDialog.AcceptButton = closeButton;
+
+            if (manageDialog.ShowDialog() == DialogResult.OK)
+            {
+                AddLog($"'{groupName}' 그룹 파일 관리 완료.");
+                LoadFileGroups();
+            }
+        }
+
+        private void OnRemoveGroupClick(object? sender, EventArgs e)
+        {
+            if (_fileGroupsListView.SelectedItems.Count == 0)
+            {
+                MessageBox.Show("제거할 그룹을 선택해주세요.", "알림", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            var selectedItem = _fileGroupsListView.SelectedItems[0];
+            var groupName = selectedItem.Text;
+
+            var result = MessageBox.Show(
+                $"'{groupName}' 그룹을 삭제하시겠습니까?",
+                "확인",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Question);
+
+            if (result == DialogResult.Yes)
+            {
+                try
+                {
+                    FileGroupManager.DeleteGroup(groupName);
+                    AddLog($"'{groupName}' 그룹이 삭제되었습니다.");
+                    LoadFileGroups();
+                }
+                catch (Exception ex)
+                {
+                    AddLog($"그룹 삭제 오류: {ex.Message}");
+                    MessageBox.Show($"그룹 삭제에 실패했습니다: {ex.Message}", "오류",
+                        MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
             }
         }
     }
