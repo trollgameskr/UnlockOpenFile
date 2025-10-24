@@ -182,10 +182,12 @@ namespace UnlockOpenFile
             _fileWatcher = new FileSystemWatcher(Path.GetDirectoryName(_tempFilePath)!)
             {
                 Filter = Path.GetFileName(_tempFilePath),
-                NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.Size
+                NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.Size | NotifyFilters.FileName
             };
 
             _fileWatcher.Changed += OnFileChanged;
+            _fileWatcher.Created += OnFileCreated;
+            _fileWatcher.Deleted += OnFileDeleted;
             _fileWatcher.EnableRaisingEvents = true;
         }
 
@@ -211,6 +213,37 @@ namespace UnlockOpenFile
             catch (Exception ex)
             {
                 OnStatusChanged($"파일 변경 감지 오류: {ex.Message}");
+            }
+        }
+
+        private void OnFileCreated(object sender, FileSystemEventArgs e)
+        {
+            try
+            {
+                OnStatusChanged("임시 파일이 다시 생성되었습니다.");
+                // Reset the last modified time to track changes from the newly created file
+                if (File.Exists(_tempFilePath))
+                {
+                    _lastModified = File.GetLastWriteTime(_tempFilePath);
+                }
+            }
+            catch (Exception ex)
+            {
+                OnStatusChanged($"파일 생성 감지 오류: {ex.Message}");
+            }
+        }
+
+        private void OnFileDeleted(object sender, FileSystemEventArgs e)
+        {
+            try
+            {
+                OnStatusChanged("임시 파일이 삭제되었습니다.");
+                // File was deleted, which might indicate the editor closed or a save-as operation
+                // The file monitoring timer will handle the cleanup if needed
+            }
+            catch (Exception ex)
+            {
+                OnStatusChanged($"파일 삭제 감지 오류: {ex.Message}");
             }
         }
 
