@@ -12,7 +12,6 @@ namespace UnlockOpenFile
         private readonly string _tempFilePath;
         private FileSystemWatcher? _fileWatcher;
         private DateTime _lastModified;
-        private bool _isModified = false;
         private Process? _openedProcess;
         private Task? _pendingSaveTask;
         private DateTime _fileOpenedTime;
@@ -200,7 +199,6 @@ namespace UnlockOpenFile
                 if (currentModified > _lastModified)
                 {
                     _lastModified = currentModified;
-                    _isModified = true;
                     FileModified?.Invoke(this, EventArgs.Empty);
                     
                     // Save back to original immediately and track the task
@@ -246,7 +244,7 @@ namespace UnlockOpenFile
             }
         }
 
-        private async void OnProcessExited(object? sender, EventArgs e)
+        private void OnProcessExited(object? sender, EventArgs e)
         {
             // Check if process exited very quickly (within 3 seconds of opening)
             // This usually means it was a launcher process for a single-instance app
@@ -263,40 +261,15 @@ namespace UnlockOpenFile
             
             OnStatusChanged("프로그램이 종료되었습니다.");
             
-            // Check for final modifications before saving
-            try
-            {
-                if (File.Exists(_tempFilePath))
-                {
-                    var currentModified = File.GetLastWriteTime(_tempFilePath);
-                    if (currentModified > _lastModified)
-                    {
-                        // File was modified but FileSystemWatcher might not have fired yet
-                        _isModified = true;
-                        _lastModified = currentModified;
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                OnStatusChanged($"최종 수정 확인 오류: {ex.Message}");
-            }
-            
-            // Final save if modified
-            if (_isModified)
-            {
-                _pendingSaveTask = SaveToOriginalAsync();
-                await _pendingSaveTask;
-            }
-            
             // Notify that the process has exited
+            // Note: All changes are already saved immediately via FileSystemWatcher
             ProcessExited?.Invoke(this, EventArgs.Empty);
         }
 
         private void StartFileMonitoring()
         {
             // Check every 2 seconds if the temp file is still being used
-            _fileMonitorTimer = new System.Threading.Timer(async _ =>
+            _fileMonitorTimer = new System.Threading.Timer(_ =>
             {
                 try
                 {
@@ -306,13 +279,7 @@ namespace UnlockOpenFile
                         OnStatusChanged("임시 파일이 삭제되었습니다. 파일을 닫습니다.");
                         StopFileMonitoring();
                         
-                        // Final save if modified
-                        if (_isModified)
-                        {
-                            _pendingSaveTask = SaveToOriginalAsync();
-                            await _pendingSaveTask;
-                        }
-                        
+                        // Note: All changes are already saved immediately via FileSystemWatcher
                         ProcessExited?.Invoke(this, EventArgs.Empty);
                         return;
                     }
@@ -320,23 +287,6 @@ namespace UnlockOpenFile
                     // Check if file is still locked (being used by another process)
                     if (!IsFileLocked(_tempFilePath))
                     {
-                        // Check for any final modifications before considering the file closed
-                        try
-                        {
-                            var currentModified = File.GetLastWriteTime(_tempFilePath);
-                            if (currentModified > _lastModified)
-                            {
-                                // File was modified, update tracking
-                                _isModified = true;
-                                _lastModified = currentModified;
-                                OnStatusChanged("최종 변경 사항 감지됨.");
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            OnStatusChanged($"최종 수정 확인 오류: {ex.Message}");
-                        }
-                        
                         // File exists but is not locked - check if it hasn't been modified for a while
                         var timeSinceLastModify = DateTime.Now - _lastModified;
                         if (timeSinceLastModify.TotalSeconds > 10)
@@ -346,13 +296,7 @@ namespace UnlockOpenFile
                             OnStatusChanged("파일이 10초 이상 수정되지 않았고 잠금이 해제되었습니다. 파일을 닫습니다.");
                             StopFileMonitoring();
                             
-                            // Final save if modified
-                            if (_isModified)
-                            {
-                                _pendingSaveTask = SaveToOriginalAsync();
-                                await _pendingSaveTask;
-                            }
-                            
+                            // Note: All changes are already saved immediately via FileSystemWatcher
                             ProcessExited?.Invoke(this, EventArgs.Empty);
                         }
                     }
@@ -564,25 +508,9 @@ namespace UnlockOpenFile
                 
                 _fileWatcher?.Dispose();
                 
-                // Perform a final save check before cleanup
+                // Delete temporary file - all changes are already saved immediately via FileSystemWatcher
                 if (File.Exists(_tempFilePath))
                 {
-                    try
-                    {
-                        var currentModified = File.GetLastWriteTime(_tempFilePath);
-                        if (currentModified > _lastModified)
-                        {
-                            // File was modified but not yet saved
-                            OnStatusChanged("최종 변경 사항 감지, 원본에 저장 중...");
-                            _pendingSaveTask = SaveToOriginalAsync();
-                            _pendingSaveTask.Wait(TimeSpan.FromSeconds(10));
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        OnStatusChanged($"최종 저장 확인 오류: {ex.Message}");
-                    }
-                    
                     File.Delete(_tempFilePath);
                 }
             }
