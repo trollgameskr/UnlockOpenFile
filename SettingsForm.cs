@@ -958,18 +958,8 @@ namespace UnlockOpenFile
                         {
                             FileGroupManager.AddFileToGroup(groupName, filePath);
                             
-                            // Check if file is already in the list
-                            bool exists = false;
-                            foreach (ListViewItem existingItem in filesListView.Items)
-                            {
-                                if (existingItem.Tag?.ToString()?.Equals(filePath, StringComparison.OrdinalIgnoreCase) == true)
-                                {
-                                    exists = true;
-                                    break;
-                                }
-                            }
-                            
-                            if (!exists)
+                            // Add to list view if not already present
+                            if (!IsFileInListView(filesListView, filePath))
                             {
                                 var item = new ListViewItem(System.IO.Path.GetFileName(filePath));
                                 item.SubItems.Add(filePath);
@@ -989,7 +979,7 @@ namespace UnlockOpenFile
 
             var addFromRecentButton = new Button
             {
-                Text = "최근 목록에서\n추가",
+                Text = "최근 목록에서 추가",
                 Location = new Point(590, 20),
                 Width = 90,
                 Height = 40
@@ -1068,18 +1058,8 @@ namespace UnlockOpenFile
                                 {
                                     FileGroupManager.AddFileToGroup(groupName, filePath);
                                     
-                                    // Check if file is already in the list
-                                    bool exists = false;
-                                    foreach (ListViewItem existingItem in filesListView.Items)
-                                    {
-                                        if (existingItem.Tag?.ToString()?.Equals(filePath, StringComparison.OrdinalIgnoreCase) == true)
-                                        {
-                                            exists = true;
-                                            break;
-                                        }
-                                    }
-                                    
-                                    if (!exists)
+                                    // Add to list view if not already present
+                                    if (!IsFileInListView(filesListView, filePath))
                                     {
                                         var newItem = new ListViewItem(System.IO.Path.GetFileName(filePath));
                                         newItem.SubItems.Add(filePath);
@@ -1147,6 +1127,18 @@ namespace UnlockOpenFile
                 AddLog($"'{groupName}' 그룹 파일 관리 완료.");
                 LoadFileGroups();
             }
+        }
+
+        private bool IsFileInListView(ListView listView, string filePath)
+        {
+            foreach (ListViewItem item in listView.Items)
+            {
+                if (item.Tag?.ToString()?.Equals(filePath, StringComparison.OrdinalIgnoreCase) == true)
+                {
+                    return true;
+                }
+            }
+            return false;
         }
 
         private void OnRemoveGroupClick(object? sender, EventArgs e)
