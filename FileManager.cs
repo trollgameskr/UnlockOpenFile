@@ -17,6 +17,7 @@ namespace UnlockOpenFile
         private Task? _pendingSaveTask;
         private DateTime _fileOpenedTime;
         private System.Threading.Timer? _fileMonitorTimer;
+        private System.Threading.Timer? _pollTimer;
 
         public event EventHandler<string>? StatusChanged;
         public event EventHandler? FileModified;
@@ -187,6 +188,50 @@ namespace UnlockOpenFile
 
             _fileWatcher.Changed += OnFileChanged;
             _fileWatcher.EnableRaisingEvents = true;
+            
+            // Start polling timer as backup mechanism since FileSystemWatcher is not always reliable
+            StartPollingTimer();
+        }
+        
+        private void StartPollingTimer()
+        {
+            // Poll every 1 second to check for file changes
+            // This acts as a backup when FileSystemWatcher doesn't fire
+            _pollTimer?.Dispose();
+            _pollTimer = new System.Threading.Timer(async _ =>
+            {
+                try
+                {
+                    if (!File.Exists(_tempFilePath))
+                    {
+                        // File was deleted, stop polling
+                        StopPollingTimer();
+                        return;
+                    }
+                    
+                    var currentModified = File.GetLastWriteTime(_tempFilePath);
+                    if (currentModified > _lastModified)
+                    {
+                        // File was modified, save to original
+                        _lastModified = currentModified;
+                        _isModified = true;
+                        FileModified?.Invoke(this, EventArgs.Empty);
+                        
+                        _pendingSaveTask = SaveToOriginalAsync();
+                        await _pendingSaveTask;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    OnStatusChanged($"폴링 중 오류: {ex.Message}");
+                }
+            }, null, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1));
+        }
+        
+        private void StopPollingTimer()
+        {
+            _pollTimer?.Dispose();
+            _pollTimer = null;
         }
 
         private async void OnFileChanged(object sender, FileSystemEventArgs e)
@@ -554,6 +599,9 @@ namespace UnlockOpenFile
             {
                 // Stop file monitoring timer
                 StopFileMonitoring();
+                
+                // Stop polling timer
+                StopPollingTimer();
                 
                 // Wait for any pending save operation to complete
                 if (_pendingSaveTask != null && !_pendingSaveTask.IsCompleted)
