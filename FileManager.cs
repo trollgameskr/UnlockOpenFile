@@ -8,6 +8,17 @@ namespace UnlockOpenFile
 {
     public class FileManager
     {
+        // Delay constants for file change detection
+        // FileChangeDebounceDelayMs: Short delay to coalesce multiple rapid events from a single save operation
+        // - Most editors fire multiple Changed events in quick succession
+        // - 50ms is sufficient to group these while remaining responsive
+        private const int FileChangeDebounceDelayMs = 50;
+        
+        // AtomicSaveSettleDelayMs: Additional delay for atomic save operations (LibreOffice, etc.)
+        // - Atomic saves involve delete+rename operations that need time to complete
+        // - 100ms ensures the file system has fully updated before we read the file
+        private const int AtomicSaveSettleDelayMs = 100;
+        
         private readonly string _originalFilePath;
         private readonly string _tempFilePath;
         private FileSystemWatcher? _fileWatcher;
@@ -182,10 +193,12 @@ namespace UnlockOpenFile
             _fileWatcher = new FileSystemWatcher(Path.GetDirectoryName(_tempFilePath)!)
             {
                 Filter = Path.GetFileName(_tempFilePath),
-                NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.Size
+                NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.Size | NotifyFilters.FileName
             };
 
             _fileWatcher.Changed += OnFileChanged;
+            _fileWatcher.Created += OnFileChanged;
+            _fileWatcher.Renamed += OnFileRenamed;
             _fileWatcher.EnableRaisingEvents = true;
         }
 
@@ -193,8 +206,55 @@ namespace UnlockOpenFile
         {
             try
             {
+                // Log the type of change for debugging
+                if (e.ChangeType == WatcherChangeTypes.Created)
+                {
+                    OnStatusChanged($"파일이 생성되었습니다: {e.Name} (LibreOffice 원자적 저장일 수 있음)");
+                }
+                
                 // Minimal debounce to avoid multiple rapid-fire events from the same save operation
-                await Task.Delay(50);
+                await Task.Delay(FileChangeDebounceDelayMs);
+                
+                // Process the file change
+                await OnFileChangedInternal();
+            }
+            catch (Exception ex)
+            {
+                OnStatusChanged($"파일 변경 감지 오류: {ex.Message}");
+            }
+        }
+
+        private async void OnFileRenamed(object sender, RenamedEventArgs e)
+        {
+            try
+            {
+                // LibreOffice and other editors may use atomic save by renaming a temp file
+                // If our temp file was the target of a rename, treat it as a change
+                if (e.Name == Path.GetFileName(_tempFilePath))
+                {
+                    OnStatusChanged("파일이 교체되었습니다 (LibreOffice 원자적 저장). 변경 사항을 저장합니다.");
+                    
+                    // Extra delay to ensure file is fully written after atomic save
+                    await Task.Delay(AtomicSaveSettleDelayMs);
+                    
+                    // Treat rename as a file change
+                    await OnFileChangedInternal();
+                }
+            }
+            catch (Exception ex)
+            {
+                OnStatusChanged($"파일 이름 변경 감지 오류: {ex.Message}");
+            }
+        }
+
+        private async Task OnFileChangedInternal()
+        {
+            try
+            {
+                if (!File.Exists(_tempFilePath))
+                {
+                    return;
+                }
                 
                 var currentModified = File.GetLastWriteTime(_tempFilePath);
                 if (currentModified > _lastModified)
@@ -210,7 +270,7 @@ namespace UnlockOpenFile
             }
             catch (Exception ex)
             {
-                OnStatusChanged($"파일 변경 감지 오류: {ex.Message}");
+                OnStatusChanged($"파일 변경 처리 오류: {ex.Message}");
             }
         }
 
