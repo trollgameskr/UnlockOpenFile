@@ -182,10 +182,12 @@ namespace UnlockOpenFile
             _fileWatcher = new FileSystemWatcher(Path.GetDirectoryName(_tempFilePath)!)
             {
                 Filter = Path.GetFileName(_tempFilePath),
-                NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.Size
+                NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.Size | NotifyFilters.FileName
             };
 
             _fileWatcher.Changed += OnFileChanged;
+            _fileWatcher.Created += OnFileChanged;
+            _fileWatcher.Renamed += OnFileRenamed;
             _fileWatcher.EnableRaisingEvents = true;
         }
 
@@ -193,8 +195,20 @@ namespace UnlockOpenFile
         {
             try
             {
+                // Log the type of change for debugging
+                if (e.ChangeType == WatcherChangeTypes.Created)
+                {
+                    OnStatusChanged($"파일이 생성되었습니다: {e.Name} (LibreOffice 원자적 저장일 수 있음)");
+                }
+                
                 // Minimal debounce to avoid multiple rapid-fire events from the same save operation
                 await Task.Delay(50);
+                
+                // Check if file still exists (LibreOffice may delete and recreate)
+                if (!File.Exists(_tempFilePath))
+                {
+                    return;
+                }
                 
                 var currentModified = File.GetLastWriteTime(_tempFilePath);
                 if (currentModified > _lastModified)
@@ -211,6 +225,56 @@ namespace UnlockOpenFile
             catch (Exception ex)
             {
                 OnStatusChanged($"파일 변경 감지 오류: {ex.Message}");
+            }
+        }
+
+        private async void OnFileRenamed(object sender, RenamedEventArgs e)
+        {
+            try
+            {
+                // LibreOffice and other editors may use atomic save by renaming a temp file
+                // If our temp file was the target of a rename, treat it as a change
+                if (e.Name == Path.GetFileName(_tempFilePath))
+                {
+                    OnStatusChanged("파일이 교체되었습니다 (LibreOffice 원자적 저장). 변경 사항을 저장합니다.");
+                    
+                    // Small delay to ensure file is fully written
+                    await Task.Delay(100);
+                    
+                    // Treat rename as a file change
+                    await OnFileChangedInternal();
+                }
+            }
+            catch (Exception ex)
+            {
+                OnStatusChanged($"파일 이름 변경 감지 오류: {ex.Message}");
+            }
+        }
+
+        private async Task OnFileChangedInternal()
+        {
+            try
+            {
+                if (!File.Exists(_tempFilePath))
+                {
+                    return;
+                }
+                
+                var currentModified = File.GetLastWriteTime(_tempFilePath);
+                if (currentModified > _lastModified)
+                {
+                    _lastModified = currentModified;
+                    _isModified = true;
+                    FileModified?.Invoke(this, EventArgs.Empty);
+                    
+                    // Save back to original immediately and track the task
+                    _pendingSaveTask = SaveToOriginalAsync();
+                    await _pendingSaveTask;
+                }
+            }
+            catch (Exception ex)
+            {
+                OnStatusChanged($"파일 변경 처리 오류: {ex.Message}");
             }
         }
 
