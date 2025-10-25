@@ -8,6 +8,10 @@ namespace UnlockOpenFile
 {
     public class FileManager
     {
+        // Delay constants for file change detection
+        private const int FileChangeDebounceDelayMs = 50;  // Minimal debounce for rapid-fire events
+        private const int AtomicSaveSettleDelayMs = 100;   // Extra delay for atomic save operations to settle
+        
         private readonly string _originalFilePath;
         private readonly string _tempFilePath;
         private FileSystemWatcher? _fileWatcher;
@@ -202,25 +206,10 @@ namespace UnlockOpenFile
                 }
                 
                 // Minimal debounce to avoid multiple rapid-fire events from the same save operation
-                await Task.Delay(50);
+                await Task.Delay(FileChangeDebounceDelayMs);
                 
-                // Check if file still exists (LibreOffice may delete and recreate)
-                if (!File.Exists(_tempFilePath))
-                {
-                    return;
-                }
-                
-                var currentModified = File.GetLastWriteTime(_tempFilePath);
-                if (currentModified > _lastModified)
-                {
-                    _lastModified = currentModified;
-                    _isModified = true;
-                    FileModified?.Invoke(this, EventArgs.Empty);
-                    
-                    // Save back to original immediately and track the task
-                    _pendingSaveTask = SaveToOriginalAsync();
-                    await _pendingSaveTask;
-                }
+                // Process the file change
+                await OnFileChangedInternal();
             }
             catch (Exception ex)
             {
@@ -238,8 +227,8 @@ namespace UnlockOpenFile
                 {
                     OnStatusChanged("파일이 교체되었습니다 (LibreOffice 원자적 저장). 변경 사항을 저장합니다.");
                     
-                    // Small delay to ensure file is fully written
-                    await Task.Delay(100);
+                    // Extra delay to ensure file is fully written after atomic save
+                    await Task.Delay(AtomicSaveSettleDelayMs);
                     
                     // Treat rename as a file change
                     await OnFileChangedInternal();
