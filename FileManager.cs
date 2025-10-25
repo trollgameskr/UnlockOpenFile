@@ -9,8 +9,15 @@ namespace UnlockOpenFile
     public class FileManager
     {
         // Delay constants for file change detection
-        private const int FileChangeDebounceDelayMs = 50;  // Minimal debounce for rapid-fire events
-        private const int AtomicSaveSettleDelayMs = 100;   // Extra delay for atomic save operations to settle
+        // FileChangeDebounceDelayMs: Short delay to coalesce multiple rapid events from a single save operation
+        // - Most editors fire multiple Changed events in quick succession
+        // - 50ms is sufficient to group these while remaining responsive
+        private const int FileChangeDebounceDelayMs = 50;
+        
+        // AtomicSaveSettleDelayMs: Additional delay for atomic save operations (LibreOffice, etc.)
+        // - Atomic saves involve delete+rename operations that need time to complete
+        // - 100ms ensures the file system has fully updated before we read the file
+        private const int AtomicSaveSettleDelayMs = 100;
         
         private readonly string _originalFilePath;
         private readonly string _tempFilePath;
