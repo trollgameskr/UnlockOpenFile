@@ -332,6 +332,19 @@ namespace UnlockOpenFile
                 {
                     var value = key.GetValue("UnlockOpenFile");
                     _startupCheckBox.Checked = value != null;
+                    
+                    // If registry value exists but doesn't have --startup argument, update it
+                    if (value != null && !value.ToString()!.Contains("--startup"))
+                    {
+                        // Upgrade old registration to new format with --startup argument
+                        using var writeKey = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Run", true);
+                        if (writeKey != null)
+                        {
+                            var exePath = Application.ExecutablePath;
+                            writeKey.SetValue("UnlockOpenFile", $"\"{exePath}\" --startup");
+                            AddLog("시작 프로그램 등록이 새 형식으로 업데이트되었습니다.");
+                        }
+                    }
                 }
 
                 // Load custom application paths
