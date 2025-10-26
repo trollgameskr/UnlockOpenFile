@@ -52,9 +52,19 @@ namespace UnlockOpenFile
                 // Always start IPC server to handle file open requests
                 StartIPCServer();
 
-                // If arguments are provided, open file in main form
-                if (args.Length > 0)
+                // Check if started with --startup argument (Windows startup)
+                bool isStartupMode = args.Length > 0 && args[0] == "--startup";
+
+                if (isStartupMode)
                 {
+                    // Start minimized in tray when launched at Windows startup
+                    // Just run the application context without showing any form
+                    // The IPC server will handle file open requests
+                    Application.Run(new ApplicationContext());
+                }
+                else if (args.Length > 0)
+                {
+                    // If arguments are provided, open file in main form
                     _mainForm = new MainForm();
                     _mainForm.OpenFile(args[0]);
                     Application.Run(_mainForm);
