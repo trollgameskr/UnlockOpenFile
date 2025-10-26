@@ -368,7 +368,8 @@ namespace UnlockOpenFile
                     if (_startupCheckBox.Checked)
                     {
                         var exePath = Application.ExecutablePath;
-                        key.SetValue("UnlockOpenFile", exePath);
+                        // Add --startup argument to start minimized in tray
+                        key.SetValue("UnlockOpenFile", $"\"{exePath}\" --startup");
                         AddLog("시작 프로그램에 등록되었습니다.");
                     }
                     else
