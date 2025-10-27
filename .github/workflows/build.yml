@@ -30,7 +30,7 @@ jobs:
     - name: Generate SBOM (Software Bill of Materials)
       run: |
         dotnet tool install --global Microsoft.Sbom.DotNetTool
-        sbom-tool generate -b ./bin/Release -bc ./UnlockOpenFile.csproj -pn UnlockOpenFile -pv ${{ github.ref_name }} -ps trollgameskr -nsb https://github.com/trollgameskr/UnlockOpenFile
+        sbom-tool generate -b ./bin/Release -bc . -pn UnlockOpenFile -pv ${{ github.ref_name }} -ps trollgameskr -nsb https://github.com/trollgameskr/UnlockOpenFile
       continue-on-error: true
     
     - name: Publish (Self-contained)
