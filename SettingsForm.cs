@@ -29,11 +29,13 @@ namespace UnlockOpenFile
         private Button _manageGroupFilesButton = null!;
         private Button _renameGroupButton = null!;
         private Button _openGroupButton = null!;
+        private Button _checkUpdateButton = null!;
 
         public SettingsForm()
         {
             InitializeComponents();
             LoadCurrentSettings();
+            _ = CheckForUpdatesOnStartup();
         }
 
         private void InitializeComponents()
@@ -94,6 +96,16 @@ namespace UnlockOpenFile
             };
             _clearRecentFilesButton.Click += OnClearRecentFilesClick;
             _startupGroup.Controls.Add(_clearRecentFilesButton);
+
+            _checkUpdateButton = new Button
+            {
+                Text = "업데이트 확인",
+                Location = new Point(210, 85),
+                Width = 120,
+                Height = 25
+            };
+            _checkUpdateButton.Click += OnCheckUpdateClick;
+            _startupGroup.Controls.Add(_checkUpdateButton);
 
             // File association group
             _fileAssociationGroup = new GroupBox
@@ -1372,6 +1384,200 @@ namespace UnlockOpenFile
                 MessageBox.Show($"그룹을 열 수 없습니다: {ex.Message}", "오류",
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
+        }
+
+        private async void OnCheckUpdateClick(object? sender, EventArgs e)
+        {
+            _checkUpdateButton.Enabled = false;
+            _checkUpdateButton.Text = "확인 중...";
+            AddLog("업데이트를 확인하는 중...");
+
+            try
+            {
+                var updateInfo = await UpdateChecker.CheckForUpdatesAsync();
+
+                if (updateInfo == null)
+                {
+                    AddLog("업데이트 확인 중 오류가 발생했습니다. 네트워크 연결을 확인해주세요.");
+                    MessageBox.Show(
+                        "업데이트 확인 중 오류가 발생했습니다.\n네트워크 연결을 확인해주세요.",
+                        "업데이트 확인",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Warning);
+                }
+                else if (updateInfo.IsUpdateAvailable)
+                {
+                    AddLog($"새 버전을 사용할 수 있습니다: v{updateInfo.LatestVersion} (현재: v{updateInfo.CurrentVersion})");
+                    ShowUpdateAvailableDialog(updateInfo);
+                }
+                else
+                {
+                    AddLog($"최신 버전을 사용 중입니다. (v{updateInfo.CurrentVersion})");
+                    MessageBox.Show(
+                        $"최신 버전을 사용 중입니다.\n\n현재 버전: v{updateInfo.CurrentVersion}",
+                        "업데이트 확인",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Information);
+                }
+            }
+            catch (Exception ex)
+            {
+                AddLog($"업데이트 확인 오류: {ex.Message}");
+                MessageBox.Show(
+                    $"업데이트 확인 중 오류가 발생했습니다:\n{ex.Message}",
+                    "오류",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+            }
+            finally
+            {
+                _checkUpdateButton.Enabled = true;
+                _checkUpdateButton.Text = "업데이트 확인";
+            }
+        }
+
+        private async System.Threading.Tasks.Task CheckForUpdatesOnStartup()
+        {
+            try
+            {
+                // Wait a bit before checking to avoid blocking UI initialization
+                await System.Threading.Tasks.Task.Delay(1000);
+
+                var updateInfo = await UpdateChecker.CheckForUpdatesAsync();
+
+                if (updateInfo != null && updateInfo.IsUpdateAvailable)
+                {
+                    AddLog($"새 버전을 사용할 수 있습니다: v{updateInfo.LatestVersion}");
+                    
+                    // Show update notification after a delay
+                    if (this.InvokeRequired)
+                    {
+                        this.Invoke(() => ShowUpdateNotification(updateInfo));
+                    }
+                    else
+                    {
+                        ShowUpdateNotification(updateInfo);
+                    }
+                }
+            }
+            catch
+            {
+                // Fail silently on startup - don't interrupt user experience
+            }
+        }
+
+        private void ShowUpdateNotification(UpdateInfo updateInfo)
+        {
+            var result = MessageBox.Show(
+                $"새로운 버전이 출시되었습니다!\n\n" +
+                $"현재 버전: v{updateInfo.CurrentVersion}\n" +
+                $"최신 버전: v{updateInfo.LatestVersion}\n\n" +
+                $"다운로드 페이지로 이동하시겠습니까?",
+                "업데이트 알림",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Information);
+
+            if (result == DialogResult.Yes)
+            {
+                UpdateChecker.OpenReleaseUrl(updateInfo.ReleaseUrl);
+            }
+        }
+
+        private void ShowUpdateAvailableDialog(UpdateInfo updateInfo)
+        {
+            // Create a custom dialog to show release notes
+            using var updateDialog = new Form
+            {
+                Text = "업데이트 확인",
+                Size = new Size(600, 500),
+                StartPosition = FormStartPosition.CenterParent,
+                FormBorderStyle = FormBorderStyle.FixedDialog,
+                MaximizeBox = false,
+                MinimizeBox = false
+            };
+
+            var infoPanel = new Panel
+            {
+                Location = new Point(20, 20),
+                Size = new Size(540, 80),
+                BorderStyle = BorderStyle.FixedSingle
+            };
+
+            var titleLabel = new Label
+            {
+                Text = $"{updateInfo.ReleaseName}",
+                Location = new Point(10, 10),
+                Size = new Size(520, 20),
+                Font = new Font(Font.FontFamily, 10, FontStyle.Bold)
+            };
+            infoPanel.Controls.Add(titleLabel);
+
+            var versionLabel = new Label
+            {
+                Text = $"현재 버전: v{updateInfo.CurrentVersion}  →  최신 버전: v{updateInfo.LatestVersion}",
+                Location = new Point(10, 35),
+                Size = new Size(520, 20)
+            };
+            infoPanel.Controls.Add(versionLabel);
+
+            var dateLabel = new Label
+            {
+                Text = $"출시일: {updateInfo.PublishedAt:yyyy-MM-dd HH:mm}",
+                Location = new Point(10, 55),
+                Size = new Size(520, 20),
+                ForeColor = Color.Gray
+            };
+            infoPanel.Controls.Add(dateLabel);
+
+            updateDialog.Controls.Add(infoPanel);
+
+            var notesLabel = new Label
+            {
+                Text = "릴리즈 노트:",
+                Location = new Point(20, 110),
+                AutoSize = true
+            };
+            updateDialog.Controls.Add(notesLabel);
+
+            var notesTextBox = new TextBox
+            {
+                Location = new Point(20, 135),
+                Size = new Size(540, 260),
+                Multiline = true,
+                ReadOnly = true,
+                ScrollBars = ScrollBars.Vertical,
+                Text = updateInfo.ReleaseNotes
+            };
+            updateDialog.Controls.Add(notesTextBox);
+
+            var downloadButton = new Button
+            {
+                Text = "다운로드 페이지 열기",
+                Location = new Point(320, 410),
+                Width = 150,
+                Height = 35,
+                DialogResult = DialogResult.OK
+            };
+            downloadButton.Click += (s, e) =>
+            {
+                UpdateChecker.OpenReleaseUrl(updateInfo.ReleaseUrl);
+            };
+            updateDialog.Controls.Add(downloadButton);
+
+            var closeButton = new Button
+            {
+                Text = "나중에",
+                Location = new Point(480, 410),
+                Width = 80,
+                Height = 35,
+                DialogResult = DialogResult.Cancel
+            };
+            updateDialog.Controls.Add(closeButton);
+
+            updateDialog.AcceptButton = downloadButton;
+            updateDialog.CancelButton = closeButton;
+
+            updateDialog.ShowDialog();
         }
     }
 }
