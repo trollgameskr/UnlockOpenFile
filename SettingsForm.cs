@@ -1491,7 +1491,7 @@ namespace UnlockOpenFile
             using var updateDialog = new Form
             {
                 Text = "업데이트 확인",
-                Size = new Size(600, 500),
+                Size = new Size(600, 550),
                 StartPosition = FormStartPosition.CenterParent,
                 FormBorderStyle = FormBorderStyle.FixedDialog,
                 MaximizeBox = false,
@@ -1552,31 +1552,120 @@ namespace UnlockOpenFile
             };
             updateDialog.Controls.Add(notesTextBox);
 
-            var downloadButton = new Button
+            // Progress bar for download
+            var progressBar = new ProgressBar
             {
-                Text = "다운로드 페이지 열기",
-                Location = new Point(320, 410),
-                Width = 150,
-                Height = 35,
-                DialogResult = DialogResult.OK
+                Location = new Point(20, 405),
+                Size = new Size(540, 25),
+                Visible = false
             };
-            downloadButton.Click += (s, e) =>
+            updateDialog.Controls.Add(progressBar);
+
+            var statusLabel = new Label
+            {
+                Location = new Point(20, 435),
+                Size = new Size(540, 20),
+                Text = "",
+                Visible = false
+            };
+            updateDialog.Controls.Add(statusLabel);
+
+            var autoUpdateButton = new Button
+            {
+                Text = "자동 업데이트",
+                Location = new Point(240, 465),
+                Width = 150,
+                Height = 35
+            };
+            
+            var manualDownloadButton = new Button
+            {
+                Text = "수동 다운로드",
+                Location = new Point(400, 465),
+                Width = 150,
+                Height = 35
+            };
+            manualDownloadButton.Click += (s, e) =>
             {
                 UpdateChecker.OpenReleaseUrl(updateInfo.ReleaseUrl);
+                updateDialog.Close();
             };
-            updateDialog.Controls.Add(downloadButton);
 
             var closeButton = new Button
             {
                 Text = "나중에",
-                Location = new Point(480, 410),
+                Location = new Point(20, 465),
                 Width = 80,
                 Height = 35,
                 DialogResult = DialogResult.Cancel
             };
-            updateDialog.Controls.Add(closeButton);
 
-            updateDialog.AcceptButton = downloadButton;
+            autoUpdateButton.Click += async (s, e) =>
+            {
+                if (string.IsNullOrEmpty(updateInfo.DownloadUrl))
+                {
+                    MessageBox.Show("다운로드 URL을 찾을 수 없습니다. 수동 다운로드를 사용해주세요.", "오류",
+                        MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+
+                var result = MessageBox.Show(
+                    $"업데이트를 다운로드하고 자동으로 설치하시겠습니까?\n\n" +
+                    $"다운로드 크기: {updateInfo.DownloadSize / 1024.0:F2} KB\n\n" +
+                    $"업데이트가 완료되면 프로그램이 자동으로 재시작됩니다.",
+                    "자동 업데이트 확인",
+                    MessageBoxButtons.YesNo,
+                    MessageBoxIcon.Question);
+
+                if (result != DialogResult.Yes)
+                {
+                    return;
+                }
+
+                // Disable buttons and show progress
+                autoUpdateButton.Enabled = false;
+                manualDownloadButton.Enabled = false;
+                closeButton.Enabled = false;
+                progressBar.Visible = true;
+                statusLabel.Visible = true;
+                statusLabel.Text = "업데이트를 다운로드하는 중...";
+
+                var progress = new Progress<int>(percent =>
+                {
+                    if (progressBar.InvokeRequired)
+                    {
+                        progressBar.Invoke(() =>
+                        {
+                            progressBar.Value = percent;
+                            statusLabel.Text = $"다운로드 중... {percent}%";
+                        });
+                    }
+                    else
+                    {
+                        progressBar.Value = percent;
+                        statusLabel.Text = $"다운로드 중... {percent}%";
+                    }
+                });
+
+                statusLabel.Text = "업데이트를 다운로드하고 설치하는 중...";
+                
+                var success = await UpdateChecker.DownloadAndInstallUpdateAsync(updateInfo.DownloadUrl, progress);
+                
+                if (!success)
+                {
+                    // Re-enable buttons on failure
+                    autoUpdateButton.Enabled = true;
+                    manualDownloadButton.Enabled = true;
+                    closeButton.Enabled = true;
+                    progressBar.Visible = false;
+                    statusLabel.Visible = false;
+                }
+                // If success, the application will exit and restart
+            };
+
+            updateDialog.Controls.Add(autoUpdateButton);
+            updateDialog.Controls.Add(manualDownloadButton);
+            updateDialog.Controls.Add(closeButton);
             updateDialog.CancelButton = closeButton;
 
             updateDialog.ShowDialog();
