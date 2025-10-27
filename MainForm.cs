@@ -18,9 +18,12 @@ namespace UnlockOpenFile
         private readonly Dictionary<string, FileManager> _fileManagers = new();
         private System.Threading.Timer? _closeTimer;
 
+        private const int UpdateCheckDelayMs = 2000; // Delay before checking for updates on startup
+
         public MainForm()
         {
             InitializeComponents();
+            _ = CheckForUpdatesOnStartup();
         }
 
         private void InitializeComponents()
@@ -456,6 +459,35 @@ namespace UnlockOpenFile
                         AddLog($"파일을 찾을 수 없습니다: {filePath}");
                     }
                 }
+            }
+        }
+
+        private async Task CheckForUpdatesOnStartup()
+        {
+            try
+            {
+                // Wait a bit before checking to avoid blocking UI initialization
+                await Task.Delay(UpdateCheckDelayMs);
+
+                var updateInfo = await UpdateChecker.CheckForUpdatesAsync();
+
+                if (updateInfo != null && updateInfo.IsUpdateAvailable)
+                {
+                    AddLog($"새 버전을 사용할 수 있습니다: v{updateInfo.LatestVersion}");
+                    
+                    // Show balloon tip notification
+                    if (_notifyIcon != null)
+                    {
+                        _notifyIcon.ShowBalloonTip(5000,
+                            "업데이트 알림",
+                            $"새로운 버전 v{updateInfo.LatestVersion}이(가) 출시되었습니다. 설정에서 업데이트를 확인하세요.",
+                            ToolTipIcon.Info);
+                    }
+                }
+            }
+            catch
+            {
+                // Fail silently on startup - don't interrupt user experience
             }
         }
     }
