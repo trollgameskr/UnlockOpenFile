@@ -18,6 +18,8 @@ namespace UnlockOpenFile
         private readonly Dictionary<string, FileManager> _fileManagers = new();
         private System.Threading.Timer? _closeTimer;
 
+        private const int UpdateCheckDelayMs = 2000; // Delay before checking for updates on startup
+
         public MainForm()
         {
             InitializeComponents();
@@ -460,12 +462,12 @@ namespace UnlockOpenFile
             }
         }
 
-        private async System.Threading.Tasks.Task CheckForUpdatesOnStartup()
+        private async Task CheckForUpdatesOnStartup()
         {
             try
             {
                 // Wait a bit before checking to avoid blocking UI initialization
-                await System.Threading.Tasks.Task.Delay(2000);
+                await Task.Delay(UpdateCheckDelayMs);
 
                 var updateInfo = await UpdateChecker.CheckForUpdatesAsync();
 

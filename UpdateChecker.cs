@@ -13,14 +13,7 @@ namespace UnlockOpenFile
     {
         private const string GithubApiUrl = "https://api.github.com/repos/trollgameskr/UnlockOpenFile/releases/latest";
         private const string GithubRepoUrl = "https://github.com/trollgameskr/UnlockOpenFile";
-        private static readonly HttpClient _httpClient;
-
-        static UpdateChecker()
-        {
-            _httpClient = new HttpClient();
-            _httpClient.DefaultRequestHeaders.Add("User-Agent", "UnlockOpenFile-UpdateChecker");
-        }
-
+        
         public static string GetCurrentVersion()
         {
             var version = Assembly.GetExecutingAssembly().GetName().Version;
@@ -31,7 +24,11 @@ namespace UnlockOpenFile
         {
             try
             {
-                var response = await _httpClient.GetStringAsync(GithubApiUrl);
+                using var httpClient = new HttpClient();
+                httpClient.DefaultRequestHeaders.Add("User-Agent", "UnlockOpenFile-UpdateChecker");
+                httpClient.Timeout = TimeSpan.FromSeconds(10);
+                
+                var response = await httpClient.GetStringAsync(GithubApiUrl);
                 var release = JsonSerializer.Deserialize<GitHubRelease>(response);
 
                 if (release == null || string.IsNullOrEmpty(release.tag_name))
@@ -64,9 +61,11 @@ namespace UnlockOpenFile
                     ReleaseUrl = release.html_url ?? GithubRepoUrl
                 };
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                // Fail silently - network issues shouldn't crash the app
+                // Log the error for debugging while failing gracefully
+                System.Diagnostics.Debug.WriteLine($"Update check failed: {ex.Message}");
+                // Network issues shouldn't crash the app
                 return null;
             }
         }

@@ -31,6 +31,8 @@ namespace UnlockOpenFile
         private Button _openGroupButton = null!;
         private Button _checkUpdateButton = null!;
 
+        private const int UpdateCheckDelayMs = 1000; // Delay before checking for updates on startup
+
         public SettingsForm()
         {
             InitializeComponents();
@@ -1436,12 +1438,12 @@ namespace UnlockOpenFile
             }
         }
 
-        private async System.Threading.Tasks.Task CheckForUpdatesOnStartup()
+        private async Task CheckForUpdatesOnStartup()
         {
             try
             {
                 // Wait a bit before checking to avoid blocking UI initialization
-                await System.Threading.Tasks.Task.Delay(1000);
+                await Task.Delay(UpdateCheckDelayMs);
 
                 var updateInfo = await UpdateChecker.CheckForUpdatesAsync();
 
