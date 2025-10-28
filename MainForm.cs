@@ -26,11 +26,29 @@ namespace UnlockOpenFile
             _ = CheckForUpdatesOnStartup();
         }
 
+        private static Icon LoadApplicationIcon()
+        {
+            try
+            {
+                var iconPath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "app.ico");
+                if (System.IO.File.Exists(iconPath))
+                {
+                    return new Icon(iconPath);
+                }
+            }
+            catch
+            {
+                // Fallback to system icon if custom icon can't be loaded
+            }
+            return SystemIcons.Application;
+        }
+
         private void InitializeComponents()
         {
             this.Text = "UnlockOpenFile - 파일 관리";
             this.Size = new Size(800, 600);
             this.StartPosition = FormStartPosition.CenterScreen;
+            this.Icon = LoadApplicationIcon();
             this.FormClosing += OnFormClosing;
 
             var mainPanel = new TableLayoutPanel
@@ -148,7 +166,7 @@ namespace UnlockOpenFile
             // System tray icon
             _notifyIcon = new NotifyIcon
             {
-                Icon = SystemIcons.Application,
+                Icon = LoadApplicationIcon(),
                 Visible = true,
                 Text = "UnlockOpenFile"
             };
