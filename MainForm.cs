@@ -31,6 +31,7 @@ namespace UnlockOpenFile
             this.Text = "UnlockOpenFile - 파일 관리";
             this.Size = new Size(800, 600);
             this.StartPosition = FormStartPosition.CenterScreen;
+            this.Icon = IconHelper.LoadApplicationIcon();
             this.FormClosing += OnFormClosing;
 
             var mainPanel = new TableLayoutPanel
@@ -148,7 +149,7 @@ namespace UnlockOpenFile
             // System tray icon
             _notifyIcon = new NotifyIcon
             {
-                Icon = SystemIcons.Application,
+                Icon = IconHelper.LoadApplicationIcon(),
                 Visible = true,
                 Text = "UnlockOpenFile"
             };
