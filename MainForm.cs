@@ -30,6 +30,25 @@ namespace UnlockOpenFile
         {
             try
             {
+                // First try to extract the icon from the executable itself
+                var exePath = System.Diagnostics.Process.GetCurrentProcess().MainModule?.FileName;
+                if (!string.IsNullOrEmpty(exePath) && System.IO.File.Exists(exePath))
+                {
+                    var extractedIcon = Icon.ExtractAssociatedIcon(exePath);
+                    if (extractedIcon != null)
+                    {
+                        return extractedIcon;
+                    }
+                }
+            }
+            catch
+            {
+                // If extraction fails, try loading from file
+            }
+
+            try
+            {
+                // Fallback to loading from app.ico file
                 var iconPath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "app.ico");
                 if (System.IO.File.Exists(iconPath))
                 {
@@ -38,8 +57,9 @@ namespace UnlockOpenFile
             }
             catch
             {
-                // Fallback to system icon if custom icon can't be loaded
+                // Final fallback to system icon
             }
+            
             return SystemIcons.Application;
         }
 
