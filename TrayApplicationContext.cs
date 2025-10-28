@@ -11,16 +11,47 @@ namespace UnlockOpenFile
     {
         private NotifyIcon? _notifyIcon;
         private MainForm? _mainForm;
+        private Form? _hiddenForm; // Hidden form for cross-thread marshalling
 
         public TrayApplicationContext()
         {
+            // Create a hidden form for cross-thread marshalling
+            _hiddenForm = new HiddenInvokeForm();
+            _hiddenForm.Show();
+            _hiddenForm.Hide();
+            
             InitializeTrayIcon();
+        }
+
+        /// <summary>
+        /// Hidden form used only for cross-thread marshalling
+        /// </summary>
+        private class HiddenInvokeForm : Form
+        {
+            public HiddenInvokeForm()
+            {
+                FormBorderStyle = FormBorderStyle.None;
+                ShowInTaskbar = false;
+                Width = 0;
+                Height = 0;
+            }
+
+            protected override void SetVisibleCore(bool value)
+            {
+                // Prevent the form from ever becoming visible
+                base.SetVisibleCore(false);
+            }
         }
 
         /// <summary>
         /// Gets the current main form instance, or null if not created
         /// </summary>
         public new MainForm? MainForm => _mainForm;
+
+        /// <summary>
+        /// Gets the hidden form used for cross-thread marshalling
+        /// </summary>
+        public Form? HiddenForm => _hiddenForm;
 
         private void InitializeTrayIcon()
         {
@@ -85,6 +116,11 @@ namespace UnlockOpenFile
                 _mainForm.Close();
             }
             
+            if (_hiddenForm != null && !_hiddenForm.IsDisposed)
+            {
+                _hiddenForm.Close();
+            }
+            
             Application.Exit();
         }
 
@@ -94,6 +130,7 @@ namespace UnlockOpenFile
             {
                 _notifyIcon?.Dispose();
                 _mainForm?.Dispose();
+                _hiddenForm?.Dispose();
             }
             base.Dispose(disposing);
         }

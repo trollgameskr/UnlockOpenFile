@@ -118,43 +118,22 @@ namespace UnlockOpenFile
                                         _mainForm.BringToFront();
                                     });
                                 }
-                                else if (_trayContext != null)
+                                else if (_trayContext != null && _trayContext.HiddenForm != null && !_trayContext.HiddenForm.IsDisposed)
                                 {
-                                    // Tray context is running, show/create main form and open file
-                                    // Use Application.OpenForms to find any form to invoke on, or use the tray context's synchronization context
-                                    var invokeTarget = _trayContext.MainForm ?? Application.OpenForms.Cast<Form>().FirstOrDefault();
-                                    if (invokeTarget != null && !invokeTarget.IsDisposed)
+                                    // Tray context is running, use the hidden form to marshal to UI thread
+                                    _trayContext.HiddenForm.Invoke(() =>
                                     {
-                                        invokeTarget.Invoke(() =>
+                                        _trayContext.ShowMainForm();
+                                        var mainForm = _trayContext.MainForm;
+                                        if (mainForm != null)
                                         {
-                                            _trayContext.ShowMainForm();
-                                            var mainForm = _trayContext.MainForm;
-                                            if (mainForm != null)
-                                            {
-                                                _mainForm = mainForm; // Update the reference
-                                                mainForm.OpenFile(filePath);
-                                                mainForm.Show();
-                                                mainForm.WindowState = FormWindowState.Normal;
-                                                mainForm.BringToFront();
-                                            }
-                                        });
-                                    }
-                                    else
-                                    {
-                                        // No form available to invoke on, create on a new thread
-                                        var thread = new Thread(() =>
-                                        {
-                                            _trayContext.ShowMainForm();
-                                            var mainForm = _trayContext.MainForm;
-                                            if (mainForm != null)
-                                            {
-                                                _mainForm = mainForm; // Update the reference
-                                                mainForm.OpenFile(filePath);
-                                            }
-                                        });
-                                        thread.SetApartmentState(ApartmentState.STA);
-                                        thread.Start();
-                                    }
+                                            _mainForm = mainForm; // Update the reference
+                                            mainForm.OpenFile(filePath);
+                                            mainForm.Show();
+                                            mainForm.WindowState = FormWindowState.Normal;
+                                            mainForm.BringToFront();
+                                        }
+                                    });
                                 }
                                 else if (_settingsForm != null && !_settingsForm.IsDisposed)
                                 {
@@ -180,18 +159,14 @@ namespace UnlockOpenFile
                                         settingsForm.ShowDialog();
                                     });
                                 }
-                                else if (_trayContext != null)
+                                else if (_trayContext != null && _trayContext.HiddenForm != null && !_trayContext.HiddenForm.IsDisposed)
                                 {
-                                    // Tray context is running, find a form to invoke on or use a new thread
-                                    var invokeTarget = _trayContext.MainForm ?? Application.OpenForms.Cast<Form>().FirstOrDefault();
-                                    if (invokeTarget != null && !invokeTarget.IsDisposed)
+                                    // Tray context is running, use the hidden form to marshal to UI thread
+                                    _trayContext.HiddenForm.Invoke(() =>
                                     {
-                                        invokeTarget.Invoke(() =>
-                                        {
-                                            var settingsForm = new SettingsForm();
-                                            settingsForm.ShowDialog();
-                                        });
-                                    }
+                                        var settingsForm = new SettingsForm();
+                                        settingsForm.ShowDialog();
+                                    });
                                 }
                                 else if (_settingsForm != null && !_settingsForm.IsDisposed)
                                 {
