@@ -27,9 +27,13 @@ namespace UnlockOpenFile
                     }
                 }
             }
-            catch
+            catch (Exception)
             {
-                // If extraction fails, try loading from file
+                // Intentionally catching all exceptions to continue with fallback strategy
+                // This handles scenarios where:
+                // - Process.MainModule is null (rare cases)
+                // - Icon extraction fails (corrupted exe, permissions, etc.)
+                // Continue to next fallback option
             }
 
             try
@@ -41,11 +45,18 @@ namespace UnlockOpenFile
                     return new Icon(iconPath);
                 }
             }
-            catch
+            catch (Exception)
             {
-                // Final fallback to system icon
+                // Intentionally catching all exceptions to continue with fallback strategy
+                // This handles scenarios where:
+                // - File is locked or inaccessible
+                // - Icon file is corrupted
+                // - Permission issues
+                // Continue to final fallback
             }
             
+            // Final fallback: use system default icon
+            // This ensures the application can always display an icon
             return SystemIcons.Application;
         }
     }
