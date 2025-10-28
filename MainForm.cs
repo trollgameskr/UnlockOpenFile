@@ -26,49 +26,12 @@ namespace UnlockOpenFile
             _ = CheckForUpdatesOnStartup();
         }
 
-        private static Icon LoadApplicationIcon()
-        {
-            try
-            {
-                // First try to extract the icon from the executable itself
-                var exePath = System.Diagnostics.Process.GetCurrentProcess().MainModule?.FileName;
-                if (!string.IsNullOrEmpty(exePath) && System.IO.File.Exists(exePath))
-                {
-                    var extractedIcon = Icon.ExtractAssociatedIcon(exePath);
-                    if (extractedIcon != null)
-                    {
-                        return extractedIcon;
-                    }
-                }
-            }
-            catch
-            {
-                // If extraction fails, try loading from file
-            }
-
-            try
-            {
-                // Fallback to loading from app.ico file
-                var iconPath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "app.ico");
-                if (System.IO.File.Exists(iconPath))
-                {
-                    return new Icon(iconPath);
-                }
-            }
-            catch
-            {
-                // Final fallback to system icon
-            }
-            
-            return SystemIcons.Application;
-        }
-
         private void InitializeComponents()
         {
             this.Text = "UnlockOpenFile - 파일 관리";
             this.Size = new Size(800, 600);
             this.StartPosition = FormStartPosition.CenterScreen;
-            this.Icon = LoadApplicationIcon();
+            this.Icon = IconHelper.LoadApplicationIcon();
             this.FormClosing += OnFormClosing;
 
             var mainPanel = new TableLayoutPanel
@@ -186,7 +149,7 @@ namespace UnlockOpenFile
             // System tray icon
             _notifyIcon = new NotifyIcon
             {
-                Icon = LoadApplicationIcon(),
+                Icon = IconHelper.LoadApplicationIcon(),
                 Visible = true,
                 Text = "UnlockOpenFile"
             };
