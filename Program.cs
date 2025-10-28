@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Threading;
 using System.Windows.Forms;
 using System.IO;
@@ -14,6 +15,7 @@ namespace UnlockOpenFile
         private static Mutex? _mutex;
         private static MainForm? _mainForm;
         private static SettingsForm? _settingsForm;
+        private static TrayApplicationContext? _trayContext;
 
         [STAThread]
         static void Main(string[] args)
@@ -58,9 +60,9 @@ namespace UnlockOpenFile
                 if (isStartupMode)
                 {
                     // Start minimized in tray when launched at Windows startup
-                    // Just run the application context without showing any form
-                    // The IPC server will handle file open requests
-                    Application.Run(new ApplicationContext());
+                    // Show tray icon with option to open main form
+                    _trayContext = new TrayApplicationContext();
+                    Application.Run(_trayContext);
                 }
                 else if (args.Length > 0)
                 {
@@ -116,6 +118,44 @@ namespace UnlockOpenFile
                                         _mainForm.BringToFront();
                                     });
                                 }
+                                else if (_trayContext != null)
+                                {
+                                    // Tray context is running, show/create main form and open file
+                                    // Use Application.OpenForms to find any form to invoke on, or use the tray context's synchronization context
+                                    var invokeTarget = _trayContext.MainForm ?? Application.OpenForms.Cast<Form>().FirstOrDefault();
+                                    if (invokeTarget != null && !invokeTarget.IsDisposed)
+                                    {
+                                        invokeTarget.Invoke(() =>
+                                        {
+                                            _trayContext.ShowMainForm();
+                                            var mainForm = _trayContext.MainForm;
+                                            if (mainForm != null)
+                                            {
+                                                _mainForm = mainForm; // Update the reference
+                                                mainForm.OpenFile(filePath);
+                                                mainForm.Show();
+                                                mainForm.WindowState = FormWindowState.Normal;
+                                                mainForm.BringToFront();
+                                            }
+                                        });
+                                    }
+                                    else
+                                    {
+                                        // No form available to invoke on, create on a new thread
+                                        var thread = new Thread(() =>
+                                        {
+                                            _trayContext.ShowMainForm();
+                                            var mainForm = _trayContext.MainForm;
+                                            if (mainForm != null)
+                                            {
+                                                _mainForm = mainForm; // Update the reference
+                                                mainForm.OpenFile(filePath);
+                                            }
+                                        });
+                                        thread.SetApartmentState(ApartmentState.STA);
+                                        thread.Start();
+                                    }
+                                }
                                 else if (_settingsForm != null && !_settingsForm.IsDisposed)
                                 {
                                     // MainForm doesn't exist but SettingsForm is running
@@ -139,6 +179,19 @@ namespace UnlockOpenFile
                                         var settingsForm = new SettingsForm();
                                         settingsForm.ShowDialog();
                                     });
+                                }
+                                else if (_trayContext != null)
+                                {
+                                    // Tray context is running, find a form to invoke on or use a new thread
+                                    var invokeTarget = _trayContext.MainForm ?? Application.OpenForms.Cast<Form>().FirstOrDefault();
+                                    if (invokeTarget != null && !invokeTarget.IsDisposed)
+                                    {
+                                        invokeTarget.Invoke(() =>
+                                        {
+                                            var settingsForm = new SettingsForm();
+                                            settingsForm.ShowDialog();
+                                        });
+                                    }
                                 }
                                 else if (_settingsForm != null && !_settingsForm.IsDisposed)
                                 {
